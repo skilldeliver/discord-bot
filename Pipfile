@@ -5,11 +5,14 @@ name = "pypi"
 
 [packages]
 "discord.py" = "*"
+dateparser = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.8"
 
 [scripts]
-start = "python -m bot"
+start="python -m bot"
+lint="black ."
