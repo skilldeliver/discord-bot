@@ -16,16 +16,20 @@ class GSuite(commands.Cog):
     @commands.command()
     async def create(self, ctx):
         """Creates a new event"""
+        # TODO should the bot send invitation message in participants DMs?
         pass
 
     @commands.command()
     async def edit(self, ctx):
         """Edits an existing event"""
+        # TODO optional filters as argument to this command
         pass
 
     @commands.command()
-    async def delete(self, ctx):
-        """Deletes an existing event"""
+    async def cancel(self, ctx):
+        """Cancels an existing event"""
+        # TODO add prompt "are you sure?"
+        # TODO should the bot notify people in their DMs if an event is cancled?
         pass
 
     @commands.command()
