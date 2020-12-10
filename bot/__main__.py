@@ -14,9 +14,8 @@ from bot.constants import PREFIX
 bot = commands.Bot(command_prefix=PREFIX)
 
 # loads an extenison for GSuite
-bot.load_extension('bot.cogs.gsuite')
+bot.load_extension("bot.cogs.gsuite")
 
 # run the bot with enviroment variable
 token = os.environ["BOT_TOKEN"]
 bot.run(token)
-

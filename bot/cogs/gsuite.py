@@ -4,7 +4,8 @@ import dateparser
 import discord
 from discord.ext import commands
 
-from bot.constants import GSuiteData
+from bot.constants import Color, GSuiteData
+
 
 class GSuite(commands.Cog):
     def __init__(self, bot):
@@ -12,7 +13,7 @@ class GSuite(commands.Cog):
 
     @commands.command()
     async def administrators(self, ctx):
-        # TODO should add initial check who can use this command 
+        # TODO should add initial check who can use this command
         # maybe only people with admin permissions
         """Sets a role or members to be administrators of the bot"""
         pass
@@ -21,7 +22,13 @@ class GSuite(commands.Cog):
     async def create(self, ctx, *, raw_arg):
         """Creates a new event"""
         # TODO should the bot send invitation message in participants DMs?
-        await ctx.send(self._create_command_parse(raw_arg))
+        data = self._create_command_parse(raw_arg)
+        await ctx.send(data)
+        await ctx.send(
+            embed=discord.Embed.from_dict(
+                self._create_command_embed_dict(data, ctx.message.author)
+            )
+        )
 
     @commands.command()
     async def edit(self, ctx):
@@ -48,9 +55,9 @@ class GSuite(commands.Cog):
         Parses a raw command string to separate arguments.
         """
         data = {
-            'success': True,
-            'reason': str(), # reason if parsinng failed. :)
-            'fields': dict()
+            "success": True,
+            "reason": str(),  # reason if parsinng failed. :)
+            "fields": dict(),
         }
         arguments = raw_arg.split(GSuiteData.command_arguments_delimiter)
         # filter arguments from empty values
@@ -60,11 +67,11 @@ class GSuite(commands.Cog):
         # this will make it easy to check arguments without particular order
         fields = GSuiteData.create_command_fields.copy()
         fields_delimiter = GSuiteData.command_fields_delimiter
-        
+
         try:
             for arg in arguments:
                 for field_name in fields:
-                    field_token = f'{field_name}{fields_delimiter}'
+                    field_token = f"{field_name}{fields_delimiter}"
                     if arg.strip().startswith(field_token):
                         # Example of a border case - this is the behaviour
                         # >>> 'title: this is s title:'.split('title:')
@@ -76,17 +83,21 @@ class GSuite(commands.Cog):
             # now parse every field
             required_fields = list()
             for key, value in fields.items():
-                if key == 'end':
-                    start = fields['start']
+                if key == "end" and fields['start'] is not True:
+                    start = fields["start"]
                     if not isinstance(start, datetime):
-                        start = dateparser.parse(fields['start'])
+                        start = dateparser.parse(fields["start"])
 
-                    fields['duration'] = dateparser.parse(fields['end']) - start
-                elif key == 'start':
-                    fields['start'] = dateparser.parse(fields['start'])
-                elif key == 'duration' and not fields['duration']: # if it is not set by the 'end' field
-                    fields['duration'] = datetime.now() - dateparser.parse(fields['duration'])
-                elif key == 'participants':
+                    fields["duration"] = dateparser.parse(fields["end"]) - start
+                elif key == "start" and fields['start'] is not True:
+                    fields["start"] = dateparser.parse(fields["start"])
+                elif (
+                    key == "duration" and not fields["duration"]
+                ):  # if it is not set by the 'end' field
+                    fields["duration"] = datetime.now() - dateparser.parse(
+                        fields["duration"]
+                    )
+                elif key == "participants":
                     pass
 
                 if isinstance(value, bool):
@@ -95,20 +106,51 @@ class GSuite(commands.Cog):
                     else:
                         fields[key] = GSuiteData.create_command_default_values[key]
         except Exception as e:
-            data['success'] = False
-            data['reason'] = e
+            data["success"] = False
+            data["reason"] = e
 
         if len(required_fields) > 0:
-            data['success'] = False
-            data['reason'] = f'Missing required fields: {" ".join(required_fields)}'
+            data["success"] = False
+            data["reason"] = f'Missing required fields: {" ".join(required_fields)}'
 
-        del fields['end']
-        data['fields'] = fields
+        del fields["end"]
+        data["fields"] = fields
         return data
-    
+
     @staticmethod
-    def _create_command_embed():
-        pass
+    def _create_command_embed_dict(data: dict, author) -> dict:
+        embed_dict = {
+            "title": "Error!",
+            "description": str(data["reason"]),
+            "color": Color.red,
+            "author": {
+                "name": f"{author.display_name} attempted to create an event",
+                "icon_url": str(author.avatar_url),
+            },
+        }
+
+        if data["success"]:
+            data = data['fields']
+            fields = list()
+            fields = [
+                {"name": "Starts at: ", "value": str(data["start"])},
+                {"name": "Ends at: ", "value": str(data["start"] + data['duration'])},
+                {"name": "Participants: ", "value": data["participants"]},
+            ]
+
+            embed_dict = {
+                "title": data["title"],
+                "description": data["description"],
+                "color": Color.green,
+                "author": {
+                    "name": f"{author.display_name} created an event",
+                    "icon_url": str(author.avatar_url),
+                },
+                "fields": fields,
+            }
+
+        return embed_dict
+
 
 def setup(bot):
     bot.add_cog(GSuite(bot))
