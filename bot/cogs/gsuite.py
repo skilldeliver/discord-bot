@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 from datetime import datetime
 
 from bot.constants import GSuiteData
@@ -67,7 +68,8 @@ class GSuite(commands.Cog):
                     # Example of a border case - this is the behaviour
                     # >>> 'title: this is s title:'.split('title:')
                     # ['', ' this is a ', '']
-                    fields[field_name] = arg.split(field_token)[1]
+                    fields[field_name] = arg.split(field_token)[1].strip()
+                    break
             else:
                 pass
 
