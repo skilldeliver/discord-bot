@@ -72,19 +72,19 @@ class GSuite(commands.Cog):
                         fields[field_name] = arg.split(field_token)[1].strip()
                         break
             # fields contain only string values by now
-            if fields['duration']:
-                del fields['end']
-            elif fields['end']:
-                del fields['duration']
-            
+            print(fields)
             # now parse every field
             required_fields = list()
             for key, value in fields.items():
                 if key == 'end':
-                    fields['duration'] = dateparser.parse(fields['end']) - dateparser.parse(fields['start'])
+                    start = fields['start']
+                    if not isinstance(start, datetime):
+                        start = dateparser.parse(fields['start'])
+
+                    fields['duration'] = dateparser.parse(fields['end']) - start
                 elif key == 'start':
                     fields['start'] = dateparser.parse(fields['start'])
-                elif key == 'duration':
+                elif key == 'duration' and not fields['duration']: # if it is not set by the 'end' field
                     fields['duration'] = datetime.now() - dateparser.parse(fields['duration'])
                 elif key == 'participants':
                     pass
@@ -96,11 +96,13 @@ class GSuite(commands.Cog):
                         fields[key] = GSuiteData.create_command_default_values[key]
         except Exception as e:
             data['success'] = False
-            data['reason'] = e 
+            data['reason'] = e
 
         if len(required_fields) > 0:
             data['success'] = False
             data['reason'] = f'Missing required fields: {" ".join(required_fields)}'
+
+        del fields['end']
         data['fields'] = fields
         return data
     
