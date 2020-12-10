@@ -1,6 +1,7 @@
 import discord
 from datetime import datetime
 
+from bot.constants import GSuiteData
 
 class GSuite(commands.Cog):
     def __init__(self, bot):
@@ -14,10 +15,13 @@ class GSuite(commands.Cog):
         pass
 
     @commands.command()
-    async def create(self, ctx):
+    async def create(self, ctx, *, raw_arg):
         """Creates a new event"""
         # TODO should the bot send invitation message in participants DMs?
-        pass
+        arguments = raw_arg.split(',')
+
+        for field, arg in zip(GSuiteData.create_command_fields, arguments):
+            pass
 
     @commands.command()
     async def edit(self, ctx):
@@ -37,6 +41,35 @@ class GSuite(commands.Cog):
         """LIst a events"""
         # TODO add filter support in arguments
         pass
+
+    @staticmethod
+    def create_command_parse(raw_arg: str) -> dict:
+        """
+        Parses a raw command string to separate arguments.
+        """
+        data = {
+            'success': True,
+            'reason': '', # reason if parsinng failed. :)
+        }
+        arguments = raw_arg.split(GSuiteData.command_arguments_delimiter)
+        # filter arguments from empty values
+        arguments = [a for a in arguments if len(a) > 0]
+
+        # fill up the fields dictionary with arguments
+        # this will make it easy to check arguments without particular order
+        fields = GSuiteData.create_command_fields.copy()
+        fields_delimiter = GSuiteData.command_fields_delimiter
+
+        for arg in arguments:
+            for field_name in fields:
+                field_token = f'{field_name}{fields_delimiter}'
+                if arg.startswith(field_token):
+                    # Example of a border case - this is the behaviour
+                    # >>> 'title: this is s title:'.split('title:')
+                    # ['', ' this is a ', '']
+                    fields[field_name] = arg.split(field_token)[1]
+            else:
+                pass
 
 def setup(bot):
     bot.add_cog(GSuite(bot))
