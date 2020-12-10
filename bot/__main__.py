@@ -17,6 +17,6 @@ bot = commands.Bot(command_prefix=PREFIX)
 bot.load_extension('bot.cogs.gsuite')
 
 # run the bot with enviroment variable
-token = os.environ["BOT_TOKEN"]z
+token = os.environ["BOT_TOKEN"]
 bot.run(token)
 
