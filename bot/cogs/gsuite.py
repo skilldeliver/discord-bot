@@ -22,7 +22,10 @@ class GSuite(commands.Cog):
     async def create(self, ctx, *, raw_arg):
         """Creates a new event"""
         # TODO should the bot send invitation message in participants DMs?
-        data = self._create_command_parse(raw_arg)
+        
+        # TODO consider using Converter https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html#converters
+        # instead of parsing with this method
+        data = self._create_command_parse(raw_arg, ctx.message)
         await ctx.send(data)
         await ctx.send(
             embed=discord.Embed.from_dict(
@@ -49,8 +52,7 @@ class GSuite(commands.Cog):
         # TODO add filter support in arguments
         pass
 
-    @staticmethod
-    def _create_command_parse(raw_arg: str) -> dict:
+    def _create_command_parse(self, raw_arg: str, message: discord.Message) -> dict:
         """
         Parses a raw command string to separate arguments.
         """
@@ -82,24 +84,60 @@ class GSuite(commands.Cog):
             print(fields)
             # now parse every field
             required_fields = list()
+            participants_ids = set()
+            
             for key, value in fields.items():
-                if key == "end" and fields['start'] is not True:
+                # START
+                if key == "start" and fields['start'] is not True:
+                    fields["start"] = dateparser.parse(fields["start"])
+                    # TODO add check if command is passed in the past
+                # END
+                elif key == "end" and fields['start'] is not True:
                     start = fields["start"]
                     if not isinstance(start, datetime):
                         start = dateparser.parse(fields["start"])
 
                     fields["duration"] = dateparser.parse(fields["end"]) - start
-                elif key == "start" and fields['start'] is not True:
-                    fields["start"] = dateparser.parse(fields["start"])
+                # DURATION
                 elif (
                     key == "duration" and not fields["duration"]
                 ):  # if it is not set by the 'end' field
                     fields["duration"] = datetime.now() - dateparser.parse(
                         fields["duration"]
                     )
+                # PARTICIPANTS
                 elif key == "participants":
-                    pass
 
+                    participants_mentions = dict(zip(
+                        [m.mention.replace('!', '') for m in message.mentions],
+                        message.raw_mentions))
+                    participants_role_mentions = dict(zip(
+                                [m.mention.replace('!', '') for m in message.role_mentions],
+                                message.raw_role_mentions))
+
+                    print(participants_mentions)
+                    print(participants_role_mentions)
+
+                    for token in fields['participants'].split():
+                        # tokens can be a profile tag or a role tag
+                        token = token.replace('!', '')
+
+                        try:
+                            user = self.bot.get_user(participants_mentions[token])
+                            participants_ids.add(user.id)
+                        except Exception as e:
+                            print(e)
+                            try:
+                                role = message.guild.get_role(participants_role_mentions[token])
+                                participants_ids.union(set([i for i in role.members]))
+                            except Exception as e:
+                                print(e)
+                                fields['success'] = False
+                                fields['reason'] = f'Invalid argument for participants: {token}'
+                                return fields
+
+                # check if requited field is missing
+                # if it is not requiref fields - assign default value
                 if isinstance(value, bool):
                     if value:
                         required_fields.append(key)
@@ -114,6 +152,12 @@ class GSuite(commands.Cog):
             data["reason"] = f'Missing required fields: {" ".join(required_fields)}'
 
         del fields["end"]
+        if len(participants_ids) > 0:
+            fields['partcipants_ids'] = participants_ids
+        else:
+            data['success'] = False
+            data['reason'] = 'No valid participants!'
+
         data["fields"] = fields
         return data
 
