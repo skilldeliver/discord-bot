@@ -22,7 +22,7 @@ class GSuite(commands.Cog):
     async def create(self, ctx, *, raw_arg):
         """Creates a new event"""
         # TODO should the bot send invitation message in participants DMs?
-        
+
         # TODO consider using Converter https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html#converters
         # instead of parsing with this method
         data = self._create_command_parse(raw_arg, ctx.message)
@@ -85,14 +85,14 @@ class GSuite(commands.Cog):
             # now parse every field
             required_fields = list()
             participants_ids = set()
-            
+
             for key, value in fields.items():
                 # START
-                if key == "start" and fields['start'] is not True:
+                if key == "start" and fields["start"] is not True:
                     fields["start"] = dateparser.parse(fields["start"])
                     # TODO add check if command is passed in the past
                 # END
-                elif key == "end" and fields['start'] is not True:
+                elif key == "end" and fields["start"] is not True:
                     start = fields["start"]
                     if not isinstance(start, datetime):
                         start = dateparser.parse(fields["start"])
@@ -108,19 +108,25 @@ class GSuite(commands.Cog):
                 # PARTICIPANTS
                 elif key == "participants":
 
-                    participants_mentions = dict(zip(
-                        [m.mention.replace('!', '') for m in message.mentions],
-                        message.raw_mentions))
-                    participants_role_mentions = dict(zip(
-                                [m.mention.replace('!', '') for m in message.role_mentions],
-                                message.raw_role_mentions))
+                    participants_mentions = dict(
+                        zip(
+                            [m.mention.replace("!", "") for m in message.mentions],
+                            message.raw_mentions,
+                        )
+                    )
+                    participants_role_mentions = dict(
+                        zip(
+                            [m.mention.replace("!", "") for m in message.role_mentions],
+                            message.raw_role_mentions,
+                        )
+                    )
 
                     print(participants_mentions)
                     print(participants_role_mentions)
 
-                    for token in fields['participants'].split():
+                    for token in fields["participants"].split():
                         # tokens can be a profile tag or a role tag
-                        token = token.replace('!', '')
+                        token = token.replace("!", "")
 
                         try:
                             user = self.bot.get_user(participants_mentions[token])
@@ -128,12 +134,16 @@ class GSuite(commands.Cog):
                         except Exception as e:
                             print(e)
                             try:
-                                role = message.guild.get_role(participants_role_mentions[token])
+                                role = message.guild.get_role(
+                                    participants_role_mentions[token]
+                                )
                                 participants_ids.union(set([i for i in role.members]))
                             except Exception as e:
                                 print(e)
-                                fields['success'] = False
-                                fields['reason'] = f'Invalid argument for participants: {token}'
+                                fields["success"] = False
+                                fields[
+                                    "reason"
+                                ] = f"Invalid argument for participants: {token}"
                                 return fields
 
                 # check if requited field is missing
@@ -153,10 +163,10 @@ class GSuite(commands.Cog):
 
         del fields["end"]
         if len(participants_ids) > 0:
-            fields['partcipants_ids'] = participants_ids
+            fields["partcipants_ids"] = participants_ids
         else:
-            data['success'] = False
-            data['reason'] = 'No valid participants!'
+            data["success"] = False
+            data["reason"] = "No valid participants!"
 
         data["fields"] = fields
         return data
@@ -174,11 +184,11 @@ class GSuite(commands.Cog):
         }
 
         if data["success"]:
-            data = data['fields']
+            data = data["fields"]
             fields = list()
             fields = [
                 {"name": "Starts at: ", "value": str(data["start"])},
-                {"name": "Ends at: ", "value": str(data["start"] + data['duration'])},
+                {"name": "Ends at: ", "value": str(data["start"] + data["duration"])},
                 {"name": "Participants: ", "value": data["participants"]},
             ]
 
