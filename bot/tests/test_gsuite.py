@@ -5,7 +5,7 @@ from bot.cogs.gsuite import GSuite
 # TODO write dummy structures for these below:
 # class DummyMessage:
 # class DummyBot:
-#     pass
+#      pass
 
 class TestGSuiteCog(unittest.TestCase):
     def test_create_command_parse(self):

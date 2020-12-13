@@ -173,16 +173,6 @@ class GSuite(commands.Cog):
 
     @staticmethod
     def _create_command_embed_dict(data: dict, author) -> dict:
-        embed_dict = {
-            "title": "Error!",
-            "description": str(data["reason"]),
-            "color": Color.red,
-            "author": {
-                "name": f"{author.display_name} attempted to create an event",
-                "icon_url": str(author.avatar_url),
-            },
-        }
-
         if data["success"]:
             data = data["fields"]
             fields = list()
@@ -203,8 +193,22 @@ class GSuite(commands.Cog):
                 "fields": fields,
             }
 
-        return embed_dict
+            return embed_dict
+        else:
+            return self._command_error_embed_dict(data, author)
 
+    @staticmethod
+    def _command_error_embed_dict(data: dict, author) -> dict:
+        embed_dict = {
+            "title": "Error!",
+            "description": str(data["reason"]),
+            "color": Color.red,
+            "author": {
+                "name": f"{author.display_name} attempted to create an event",
+                "icon_url": str(author.avatar_url),
+            },
+        }
+        return embed_dict
 
 def setup(bot):
     bot.add_cog(GSuite(bot))
