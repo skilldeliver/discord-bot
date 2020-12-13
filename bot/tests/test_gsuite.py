@@ -2,12 +2,16 @@ import unittest
 
 from bot.cogs.gsuite import GSuite
 
+# TODO write dummy structures for these below:
+# class DummyMessage:
+# class DummyBot:
+#     pass
 
 class TestGSuiteCog(unittest.TestCase):
     def test_create_command_parse(self):
         self.assertEqual("foo".upper(), "FOO")
 
-    def test_isupper(self):
+    def test_create_command_embed(self):
         self.assertTrue("FOO".isupper())
         self.assertFalse("Foo".isupper())
 
