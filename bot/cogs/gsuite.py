@@ -12,11 +12,17 @@ class GSuite(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def administrators(self, ctx):
+    async def role(self, ctx, arg):
+        role = ctx.guild.get_role(int(arg))
+        await ctx.send(f'{role.name} {[m.id for m in role.members]}')
+
+    @commands.command()
+    async def administrators(self, ctx, arg):
         # TODO should add initial check who can use this command
         # maybe only people with admin permissions
         """Sets a role or members to be administrators of the bot"""
-        pass
+        role = ctx.guild.get_role(581605481068363828)
+        await ctx.send(role.members)
 
     @commands.command()
     async def create(self, ctx, *, raw_arg):
@@ -116,30 +122,33 @@ class GSuite(commands.Cog):
                     )
                     participants_role_mentions = dict(
                         zip(
-                            [m.mention.replace("!", "") for m in message.role_mentions],
+                            [m.mention for m in message.role_mentions],
                             message.raw_role_mentions,
                         )
                     )
 
-                    print(participants_mentions)
-                    print(participants_role_mentions)
+                    print('USERS:', participants_mentions)
+                    print('ROLES:', participants_role_mentions)
 
                     for token in fields["participants"].split():
                         # tokens can be a profile tag or a role tag
                         token = token.replace("!", "")
 
                         try:
-                            user = self.bot.get_user(participants_mentions[token])
-                            participants_ids.add(user.id)
+                            user = participants_mentions[token]
+                            participants_ids.add(user)
                         except Exception as e:
                             print(e)
                             try:
                                 role = message.guild.get_role(
                                     participants_role_mentions[token]
                                 )
-                                participants_ids.union(set([i for i in role.members]))
+                                print('ROLE', role)
+                                print('ROLE.MEMBER:', [m.id for m in role.members])
+                                participants_ids.union(set([i.id for i in role.members]))
+                                print('PARTICIPANTS:', participants_ids)
                             except Exception as e:
-                                print(e)
+                                print("EXCEPTION: ", e)
                                 fields["success"] = False
                                 fields[
                                     "reason"
@@ -195,7 +204,7 @@ class GSuite(commands.Cog):
 
             return embed_dict
         else:
-            return self._command_error_embed_dict(data, author)
+            return GSuite._command_error_embed_dict(data, author)
 
     @staticmethod
     def _command_error_embed_dict(data: dict, author) -> dict:
