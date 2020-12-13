@@ -121,9 +121,6 @@ class GSuite(commands.Cog):
                         )
                     )
 
-                    print('USERS:', participants_mentions)
-                    print('ROLES:', participants_role_mentions)
-
                     for token in fields["participants"].split():
                         # tokens can be a profile tag or a role tag
                         token = token.replace("!", "")
@@ -132,15 +129,13 @@ class GSuite(commands.Cog):
                             user = participants_mentions[token]
                             participants_ids.add(user)
                         except Exception as e:
-                            print(e)
                             try:
                                 role = message.guild.get_role(
                                     participants_role_mentions[token]
                                 )
-                                print('ROLE', role)
-                                print('ROLE.MEMBER:', [m.id for m in role.members])
-                                participants_ids.union(set([i.id for i in role.members]))
-                                print('PARTICIPANTS:', participants_ids)
+                                participants_ids = participants_ids.union(
+                                    set([i.id for i in role.members if not i.bot])
+                                )
                             except Exception as e:
                                 print("EXCEPTION: ", e)
                                 fields["success"] = False
@@ -212,6 +207,7 @@ class GSuite(commands.Cog):
             },
         }
         return embed_dict
+
 
 def setup(bot):
     bot.add_cog(GSuite(bot))
