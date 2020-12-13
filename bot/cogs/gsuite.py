@@ -12,17 +12,11 @@ class GSuite(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def role(self, ctx, arg):
-        role = ctx.guild.get_role(int(arg))
-        await ctx.send(f'{role.name} {[m.id for m in role.members]}')
-
-    @commands.command()
     async def administrators(self, ctx, arg):
         # TODO should add initial check who can use this command
         # maybe only people with admin permissions
         """Sets a role or members to be administrators of the bot"""
-        role = ctx.guild.get_role(581605481068363828)
-        await ctx.send(role.members)
+        pass
 
     @commands.command()
     async def create(self, ctx, *, raw_arg):
