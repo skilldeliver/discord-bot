@@ -1,6 +1,7 @@
 from datetime import datetime
+import sys
 
-import dateparser
+import dateparser as dp
 import discord
 from discord.ext import commands
 
@@ -82,92 +83,82 @@ class GSuite(commands.Cog):
                         break
             # fields contain only string values by now
             print(fields)
-            # now parse every field
-            required_fields = list()
-            participants_ids = set()
 
+            # check if the input is missing required field
+            required_fields_missing = list()
             for key, value in fields.items():
-                # START
-                if key == "start" and fields["start"] is not True:
-                    fields["start"] = dateparser.parse(fields["start"])
-                    # TODO add check if command is passed in the past
-                # END
-                elif key == "end" and fields["start"] is not True:
-                    start = fields["start"]
-                    if not isinstance(start, datetime):
-                        start = dateparser.parse(fields["start"])
+                if value == True:
+                    required_fields.append(key)
 
-                    fields["duration"] = dateparser.parse(fields["end"]) - start
-                # DURATION
-                elif (
-                    key == "duration" and not fields["duration"]
-                ):  # if it is not set by the 'end' field
-                    fields["duration"] = datetime.now() - dateparser.parse(
-                        fields["duration"]
-                    )
-                # PARTICIPANTS
-                elif key == "participants":
+            assert (
+                len(required_fields_missing) == 0
+            ), "Missing required fields: " + " ".join(required_fields)
 
-                    participants_mentions = dict(
-                        zip(
-                            [m.mention.replace("!", "") for m in message.mentions],
-                            message.raw_mentions,
-                        )
-                    )
-                    participants_role_mentions = dict(
-                        zip(
-                            [m.mention for m in message.role_mentions],
-                            message.raw_role_mentions,
-                        )
-                    )
+            # now parse every field
+            defaults = GSuiteData.create_command_default_values
+            # TODO add check if command is passed in the past
+            # START AND TITLE:
+            fields["start"] = dp.parse(fields["start"])
+            fields["title"] = fields["title"] if fields["title"] else defaults["title"]
+            # DESCRIPION:
+            fields["description"] = (
+                fields["description"]
+                if fields["description"]
+                else defaults["description"]
+            )
+            # END:
+            fields["duration"] = (
+                (dp.parse(fields["end"]) - fields["start"])
+                if fields["end"]
+                else fields["duration"]
+            )
+            del fields["end"]
+            # DURATION:
+            fields["duration"] = (
+                fields["duration"] if fields["duration"] else defaults["duration"]
+            )
+            # PARTICIPANTS IDS:
+            fields["participants_ids"] = self.__parse_particpants(
+                fields["participants"], message
+            )
 
-                    for token in fields["participants"].split():
-                        # tokens can be a profile tag or a role tag
-                        token = token.replace("!", "")
-
-                        try:
-                            user = participants_mentions[token]
-                            participants_ids.add(user)
-                        except Exception as e:
-                            try:
-                                role = message.guild.get_role(
-                                    participants_role_mentions[token]
-                                )
-                                participants_ids = participants_ids.union(
-                                    set([i.id for i in role.members if not i.bot])
-                                )
-                            except Exception as e:
-                                print("EXCEPTION: ", e)
-                                fields["success"] = False
-                                fields[
-                                    "reason"
-                                ] = f"Invalid argument for participants: {token}"
-                                return fields
-
-                # check if requited field is missing
-                # if it is not requiref fields - assign default value
-                if isinstance(value, bool):
-                    if value:
-                        required_fields.append(key)
-                    else:
-                        fields[key] = GSuiteData.create_command_default_values[key]
         except Exception as e:
+            _, _, exc_tb = sys.exc_info()
+            print("EXCEPTION:", e, "LINE:", exc_tb.tb_lineno)
+
             data["success"] = False
             data["reason"] = e
 
-        if len(required_fields) > 0:
-            data["success"] = False
-            data["reason"] = f'Missing required fields: {" ".join(required_fields)}'
-
-        del fields["end"]
-        if len(participants_ids) > 0:
-            fields["partcipants_ids"] = participants_ids
-        else:
-            data["success"] = False
-            data["reason"] = "No valid participants!"
-
         data["fields"] = fields
         return data
+
+    @staticmethod
+    def __parse_particpants(participants: str, message: discord.Message) -> list:
+        participants_ids = set()
+
+        mentions = [m.mention.replace("!", "") for m in message.mentions]
+        participants_mentions = dict(zip(mentions, message.raw_mentions))
+
+        role_mentions = [m.mention for m in message.role_mentions]
+        participants_role_mentions = dict(zip(role_mentions, message.raw_role_mentions))
+
+        for token in participants.split():
+            # tokens can be a profile tag or a role tag
+            token = token.replace("!", "")
+            try:
+                user = participants_mentions[token]
+                participants_ids.add(user)
+            except KeyError:
+                try:
+                    role = message.guild.get_role(participants_role_mentions[token])
+                    participants_ids = participants_ids.union(
+                        set([i.id for i in role.members if not i.bot])
+                    )
+                except KeyError:
+                    assert False, "Invalid argument for participants: " + token
+        assert len(participants_ids) > 0, "No valid participants!"
+        
+        return list(participants_ids)
 
     @staticmethod
     def _create_command_embed_dict(data: dict, author) -> dict:

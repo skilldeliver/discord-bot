@@ -21,21 +21,24 @@ class DiscordGuildStub:
 
 
 class DiscordMessageMock:
-    def __init__(self, guild, menitons, raw_mentions, role_menitons, raw_role_mentions):
+    def __init__(self, guild, mentions, raw_mentions, role_mentions, raw_role_mentions):
+        DiscordMentionMock = namedtuple("DiscordMentionMock", "mention")
         self.guild = guild
-        self.menitons = menitons
+        self.mentions = [DiscordMentionMock(mention=m) for m in mentions]
         self.raw_mentions = raw_mentions
-        self.role_menitons = role_menitons
+        self.role_mentions = [DiscordMentionMock(mention=m) for m in role_mentions]
         self.raw_role_mentions = raw_role_mentions
 
 
 class TestGSuiteCog(unittest.TestCase):
     def setUp(self):
-        roles = ["<@&786992565164441661>"]
+        self.maxDiff = None
+        roles_users_map = {"<@&786992565164441661>": []}
         self.gsuite_cog = GSuite(bot=None)
-        self.guild = DiscordGuildStub(roles)
+        self.guild = DiscordGuildStub(roles_users_map)
 
     def test_create_command_parse(self):
+        user_id, role_id = 365859941292048384, 786992565164441661
         expected_command_parse_unordered = {
             "success": True,
             "reason": "",
@@ -43,30 +46,28 @@ class TestGSuiteCog(unittest.TestCase):
                 "title": "Sprint planning",
                 "start": dt.now() + timedelta(days=3),
                 "duration": timedelta(hours=1),
-                "participants": "<@!365859941292048384> <@&786992565164441661>",
+                "participants": f"<@!{user_id}> <@&{role_id}>",
                 "description": "",
-                "partcipants_ids": {365859941292048384},
+                "partcipants_ids": {user_id},
             },
         }
         message = DiscordMessageMock(
             guild=self.guild,
-            mentions=["<@365859941292048384"],
-            raw_mentions=[365859941292048384],
-            role_menitons=["<@&786992565164441661>"],
-            raw_role_mentions=[786992565164441661],
+            mentions=[f"<@!{user_id}>"],
+            raw_mentions=[user_id],
+            role_mentions=[f"<@&{role_id}>"],
+            raw_role_mentions=[role_id],
         )
-        self.assertEqual(
+        self.assertDictEqual(
             self.gsuite_cog._create_command_parse(
-                raw_arg=(
-                    "title: Sprint planning,"
-                    "start: after 3 days,"
-                    "participants: <@!365859941292048384> <@&786992565164441661>"
-                )
+                raw_arg="title: Sprint planning, start: In 3 days, participants: <@!365859941292048384> <@&786992565164441661>",
+                message=message,
             ),
             expected_command_parse_unordered,
         )
 
     def test_create_command_embed(self):
+        # what? what?
         self.assertTrue("FOO".isupper())
         self.assertFalse("Foo".isupper())
 
