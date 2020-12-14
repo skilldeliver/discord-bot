@@ -19,6 +19,7 @@ class GSuiteData:
 
     # every command field maps with a value
     # which determines if it is required or not
+    # TODO replace False values with defaults :)
     create_command_fields = {
         "title": False,
         "start": True,
