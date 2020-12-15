@@ -1,4 +1,5 @@
 from collections import namedtuple
+import time
 from datetime import datetime as dt, timedelta
 import unittest
 
@@ -6,18 +7,18 @@ from bot.cogs.gsuite import GSuite
 
 # TODO write dummy structures for these below:
 class DiscordGuildStub:
-    def __init__(self, roles):
-        self.roles_map = self.__set_up_roles_map(roles)
-
-    @staticmethod
-    def __set_up_roles_map(roles):
-        roles_map = dict()
-        for role in roles:
-            roles[role] = role.strip("<&>")
-        return roles_map
+    def __init__(self, roles_members_map):
+        self.roles_membeers_map = roles_members_map
+        self.DiscordRoleMock = namedtuple("DiscordRoleMock", "members")
+        self.DiscordMemberMock = namedtuple("DiscordMemberMock", "id bot")
 
     def get_role(self, role):
-        return self.roles_map
+        return self.DiscordRoleMock(
+            members=[
+                self.DiscordMemberMock(id=m, bot=False)
+                for m in self.roles_membeers_map[role]
+            ]
+        )
 
 
 class DiscordMessageMock:
@@ -33,9 +34,7 @@ class DiscordMessageMock:
 class TestGSuiteCog(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
-        roles_users_map = {"<@&786992565164441661>": []}
         self.gsuite_cog = GSuite(bot=None)
-        self.guild = DiscordGuildStub(roles_users_map)
 
     def test_create_command_parse(self):
         user_id, role_id = 365859941292048384, 786992565164441661
@@ -48,21 +47,27 @@ class TestGSuiteCog(unittest.TestCase):
                 "duration": timedelta(hours=1),
                 "participants": f"<@!{user_id}> <@&{role_id}>",
                 "description": "",
-                "partcipants_ids": {user_id},
+                "participants_ids": [user_id],
             },
         }
         message = DiscordMessageMock(
-            guild=self.guild,
+            guild=DiscordGuildStub({786992565164441661: [365859941292048384]}),
             mentions=[f"<@!{user_id}>"],
             raw_mentions=[user_id],
             role_mentions=[f"<@&{role_id}>"],
             raw_role_mentions=[role_id],
         )
+        gsuite_create_command_parse_output = self.gsuite_cog._create_command_parse(
+            raw_arg="title: Sprint planning, start: In 3 days, participants: <@!365859941292048384> <@&786992565164441661>",
+            message=message,
+        )
+        gsuite_create_command_parse_output["fields"][
+            "start"
+        ] = gsuite_create_command_parse_output["fields"]["start"].replace(
+            microsecond=expected_command_parse_unordered["fields"]["start"].microsecond
+        )
         self.assertDictEqual(
-            self.gsuite_cog._create_command_parse(
-                raw_arg="title: Sprint planning, start: In 3 days, participants: <@!365859941292048384> <@&786992565164441661>",
-                message=message,
-            ),
+            gsuite_create_command_parse_output,
             expected_command_parse_unordered,
         )
 

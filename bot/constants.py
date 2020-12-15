@@ -1,7 +1,7 @@
 import discord
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 PREFIX = "%"
 
@@ -33,5 +33,5 @@ class GSuiteData:
         # defining default values for an event
         "title": "No title",
         "description": "",
-        "duration": 3600,  # 1h in seconds
+        "duration": timedelta(seconds=3600),  # 1h in seconds
     }

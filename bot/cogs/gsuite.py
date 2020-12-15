@@ -157,7 +157,7 @@ class GSuite(commands.Cog):
                 except KeyError:
                     assert False, "Invalid argument for participants: " + token
         assert len(participants_ids) > 0, "No valid participants!"
-        
+
         return list(participants_ids)
 
     @staticmethod
