@@ -64,6 +64,7 @@ class TestGSuiteCog(unittest.TestCase):
         gsuite_create_command_parse_output["fields"][
             "start"
         ] = gsuite_create_command_parse_output["fields"]["start"].replace(
+            # TODO add and second support (for longer execution)
             microsecond=expected_command_parse_unordered["fields"]["start"].microsecond
         )
         self.assertDictEqual(
