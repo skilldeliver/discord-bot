@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime as dt, timedelta
 import sys
 
 import dateparser as dp
@@ -114,9 +114,18 @@ class GSuite(commands.Cog):
             )
             del fields["end"]
             # DURATION:
-            fields["duration"] = (
-                fields["duration"] if fields["duration"] else defaults["duration"]
+            if not isinstance(fields["duration"], timedelta):
+                fields["duration"] = (
+                    dt.now() - dp.parse(fields["duration"])
+                    if fields["duration"]
+                    else defaults["duration"]
+                )
+            # rounding up the seconds to the nearest 10th
+            fields["duration"] = timedelta(
+                seconds=round(fields["duration"].total_seconds(), -1),
+                microseconds=0,
             )
+
             # PARTICIPANTS IDS:
             fields["participants_ids"] = self.__parse_particpants(
                 fields["participants"], message
@@ -198,6 +207,11 @@ class GSuite(commands.Cog):
             },
         }
         return embed_dict
+
+    @staticmethod
+    def _roundup(x):
+        """Rounds up to the nearest 10, used mainly for rounding seconds"""
+        return int(math.ceil(x / 10.0)) * 10
 
 
 def setup(bot):
