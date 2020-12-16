@@ -1,83 +1,191 @@
 from collections import namedtuple
+import time
 from datetime import datetime as dt, timedelta
 import unittest
 
+from random import randint
 from bot.cogs.gsuite import GSuite
 
 # TODO write dummy structures for these below:
 class DiscordGuildStub:
-    def __init__(self, roles):
-        self.roles_map = self.__set_up_roles_map(roles)
-
-    @staticmethod
-    def __set_up_roles_map(roles):
-        roles_map = dict()
-        for role in roles:
-            roles[role] = role.strip("<&>")
-        return roles_map
+    def __init__(self, roles_members_map):
+        self.roles_membeers_map = roles_members_map
+        self.DiscordRoleMock = namedtuple("DiscordRoleMock", "members")
+        self.DiscordMemberMock = namedtuple("DiscordMemberMock", "id bot")
 
     def get_role(self, role):
-        return self.roles_map
+        return self.DiscordRoleMock(
+            members=[
+                self.DiscordMemberMock(id=m, bot=False)
+                for m in self.roles_membeers_map[role]
+            ]
+        )
 
 
 class DiscordMessageMock:
-    def __init__(self, guild, mentions, raw_mentions, role_mentions, raw_role_mentions):
+    def __init__(self, guild, raw_mentions, raw_role_mentions):
         DiscordMentionMock = namedtuple("DiscordMentionMock", "mention")
         self.guild = guild
-        self.mentions = [DiscordMentionMock(mention=m) for m in mentions]
+        self.mentions = [DiscordMentionMock(mention=f"<@!{m}>") for m in raw_mentions]
         self.raw_mentions = raw_mentions
-        self.role_mentions = [DiscordMentionMock(mention=m) for m in role_mentions]
+        self.role_mentions = [
+            DiscordMentionMock(mention=f"<@&{m}>") for m in raw_role_mentions
+        ]
         self.raw_role_mentions = raw_role_mentions
 
 
-class TestGSuiteCog(unittest.TestCase):
+class TestGSuiteCreateCommand(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
-        roles_users_map = {"<@&786992565164441661>": []}
         self.gsuite_cog = GSuite(bot=None)
-        self.guild = DiscordGuildStub(roles_users_map)
 
-    def test_create_command_parse(self):
-        user_id, role_id = 365859941292048384, 786992565164441661
-        expected_command_parse_unordered = {
+    def _create_message(self, users, roles):
+        message = DiscordMessageMock(
+            guild=DiscordGuildStub(roles),
+            raw_mentions=users,
+            raw_role_mentions=list(roles.keys()),
+        )
+        return message
+
+    def test_create_command_parse_defaults(self):
+        """
+        Test case for default values of create command parsing
+        """
+        users = [261115722007183362]
+        users_mention = " ".join([f"<@!{u}>" for u in users])
+
+        command_arg = f"start: Next week, participants: {users_mention}"
+
+        expected = {
+            "success": True,
+            "reason": "",
+            "fields": {
+                "title": "No title",
+                "start": dt.now() + timedelta(days=7),
+                "duration": timedelta(hours=1),
+                "participants": f"{users_mention}",
+                "description": "",
+                "participants_ids": users,
+            },
+        }
+        message = self._create_message(users, {})
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg, message=message
+        )
+        # setting some parameters to be equal because of execution time :)
+        output["fields"]["start"] = output["fields"]["start"].replace(
+            # TODO solve this issue other way
+            microsecond=expected["fields"]["start"].microsecond,
+            second=expected["fields"]["start"].second,
+        )
+        self.assertDictEqual(output, expected)
+
+    def test_create_command_parse_unordered(self):
+        users, roles = [365859941292048384], {786992565164441661: [365859941292048384]}
+        users_mention = " ".join([f"<@!{u}>" for u in users])
+        roles_mention = " ".join([f"<@&{r}>" for r in roles])
+
+        command_arg = f"participants: {users_mention} {roles_mention}, duration: 1 hour and 30 minutes, description: This is an event for our sprint planning, title: Sprint planning, start: In 3 days, "
+
+        expected = {
             "success": True,
             "reason": "",
             "fields": {
                 "title": "Sprint planning",
                 "start": dt.now() + timedelta(days=3),
-                "duration": timedelta(hours=1),
-                "participants": f"<@!{user_id}> <@&{role_id}>",
-                "description": "",
-                "partcipants_ids": {user_id},
+                "duration": timedelta(hours=1, minutes=30),
+                "participants": f"{users_mention} {roles_mention}",
+                "description": "This is an event for our sprint planning",
+                "participants_ids": users,
             },
         }
-        message = DiscordMessageMock(
-            guild=self.guild,
-            mentions=[f"<@!{user_id}>"],
-            raw_mentions=[user_id],
-            role_mentions=[f"<@&{role_id}>"],
-            raw_role_mentions=[role_id],
+        message = self._create_message(users, roles)
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
         )
-        self.assertDictEqual(
-            self.gsuite_cog._create_command_parse(
-                raw_arg="title: Sprint planning, start: In 3 days, participants: <@!365859941292048384> <@&786992565164441661>",
+        # setting some parameters to be equal because of execution time :)
+        output["fields"]["start"] = output["fields"]["start"].replace(
+            # TODO solve this issue other way
+            microsecond=expected["fields"]["start"].microsecond,
+            second=expected["fields"]["start"].second,
+        )
+        self.assertDictEqual(output, expected)
+
+    def test_create_command_parse_end_field(self):
+            users, roles = [576035433335619614, 161736242550013952, 269583153083973632], {786992565164441661: [430712909614809098, 779268568336302091, 779285629623599124]}
+            users_mention = " ".join([f"<@!{u}>" for u in users])
+            roles_mention = " ".join([f"<@&{r}>" for r in roles])
+
+            command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+
+            expected = {
+                "success": True,
+                "reason": "",
+                "fields": {
+                    "title": "Emergency patch meeting",
+                    "start": dt.now() + timedelta(hours=2),
+                    "duration": timedelta(hours=2),
+                    "participants": f"{roles_mention} {users_mention}",
+                    "description": "",
+                    "participants_ids": list(set(users + list(i for v in roles.values() for i in v))),
+                },
+            }
+            message = self._create_message(users, roles)
+            output = self.gsuite_cog._create_command_parse(
+                raw_arg=command_arg,
                 message=message,
-            ),
-            expected_command_parse_unordered,
-        )
+            )
+            # setting some parameters to be equal because of execution time :)
+            output["fields"]["start"] = output["fields"]["start"].replace(
+                # TODO solve this issue other way
+                microsecond=expected["fields"]["start"].microsecond,
+                second=expected["fields"]["start"].second,
+            )
+            self.assertDictEqual(output, expected)
 
-    def test_create_command_embed(self):
-        # what? what?
-        self.assertTrue("FOO".isupper())
-        self.assertFalse("Foo".isupper())
+    def test_create_command_parse_randomized(self):
+            users, roles = [self._random_with_n_digits(18) for _ in range(randint(10, 15))], {self._random_with_n_digits(18):[self._random_with_n_digits(18) for _ in range(randint(5, 10))] for _ in range(randint(10, 15))}
+            users_mention = " ".join([f"<@!{u}>" for u in users])
+            roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-    def test_split(self):
-        s = "hello world"
-        self.assertEqual(s.split(), ["hello", "world"])
-        # check that s.split fails when the separator is not a string
-        with self.assertRaises(TypeError):
-            s.split(2)
+            # TODO random mentions :)
+            command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
 
+            expected = {
+                "success": True,
+                "reason": "",
+                "fields": {
+                    "title": "Emergency patch meeting",
+                    "start": dt.now() + timedelta(hours=2),
+                    "duration": timedelta(hours=2),
+                    "participants": f"{roles_mention} {users_mention}",
+                    "description": "",
+                    "participants_ids": list(set(users + list(i for v in roles.values() for i in v))),
+                },
+            }
+            message = self._create_message(users, roles)
+            output = self.gsuite_cog._create_command_parse(
+                raw_arg=command_arg,
+                message=message,
+            )
+            # TODO decide if this is a dirty fix for set unordering
+            expected['fields']['participants_ids'] = sorted(expected['fields']['participants_ids'])
+            output['fields']['participants_ids'] = sorted(output['fields']['participants_ids'])
+
+            # setting some parameters to be equal because of execution time :)
+            output["fields"]["start"] = output["fields"]["start"].replace(
+                # TODO solve this issue other way
+                microsecond=expected["fields"]["start"].microsecond,
+                second=expected["fields"]["start"].second,
+            )
+            self.assertDictEqual(output, expected)
+
+    @staticmethod
+    def _random_with_n_digits(n):
+        range_start = 10**(n-1)
+        range_end = (10**n)-1
+        return randint(range_start, range_end)
 
 if __name__ == "__main__":
     unittest.main()

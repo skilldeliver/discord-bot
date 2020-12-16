@@ -1,7 +1,7 @@
 import discord
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 PREFIX = "%"
 
@@ -19,6 +19,7 @@ class GSuiteData:
 
     # every command field maps with a value
     # which determines if it is required or not
+    # TODO replace False values with defaults :)
     create_command_fields = {
         "title": False,
         "start": True,
@@ -32,5 +33,5 @@ class GSuiteData:
         # defining default values for an event
         "title": "No title",
         "description": "",
-        "duration": 3600,  # 1h in seconds
+        "duration": timedelta(seconds=3600),  # 1h in seconds
     }
