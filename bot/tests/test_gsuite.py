@@ -217,6 +217,34 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         self.assertDictEqual(output, expected)
 
+    def test_create_command_invalid_participants(self):
+        command_arg = 'start: Tommorow, participants: Brooks'
+        expected = {
+            "success": False,
+            "reason": "Invalid argument for participants: Brooks", 
+            "fields": dict(),
+        }
+        message = self._create_message([], {})
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        self.assertDictEqual(output, expected)
+        
+        command_arg = 'start: Tommorow, participants: '
+        expected = {
+            "success": False,
+            "reason": "No valid participants!", 
+            "fields": dict(),
+        }
+        message = self._create_message([], {})
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        self.assertDictEqual(output, expected)
+        
+
     @staticmethod
     def _random_with_n_digits(n):
         range_start = 10 ** (n - 1)

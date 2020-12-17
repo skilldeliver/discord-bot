@@ -166,6 +166,7 @@ class GSuite(commands.Cog):
                         set([i.id for i in role.members if not i.bot])
                     )
                 except KeyError:
+                    # TODO maybe leave this validation for participants despite the API support for validating
                     assert False, "Invalid argument for participants: " + token
         assert len(participants_ids) > 0, "No valid participants!"
 
