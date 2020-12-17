@@ -47,6 +47,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         return message
 
+    # TODO refactor this, please, somehow :
     def test_create_command_parse_defaults(self):
         """
         Test case for default values of create command parsing
@@ -113,79 +114,142 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         self.assertDictEqual(output, expected)
 
     def test_create_command_parse_end_field(self):
-            users, roles = [576035433335619614, 161736242550013952, 269583153083973632], {786992565164441661: [430712909614809098, 779268568336302091, 779285629623599124]}
-            users_mention = " ".join([f"<@!{u}>" for u in users])
-            roles_mention = " ".join([f"<@&{r}>" for r in roles])
+        users, roles = [576035433335619614, 161736242550013952, 269583153083973632], {
+            786992565164441661: [
+                430712909614809098,
+                779268568336302091,
+                779285629623599124,
+            ]
+        }
+        users_mention = " ".join([f"<@!{u}>" for u in users])
+        roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-            command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+        command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
 
-            expected = {
-                "success": True,
-                "reason": "",
-                "fields": {
-                    "title": "Emergency patch meeting",
-                    "start": dt.now() + timedelta(hours=2),
-                    "duration": timedelta(hours=2),
-                    "participants": f"{roles_mention} {users_mention}",
-                    "description": "",
-                    "participants_ids": list(set(users + list(i for v in roles.values() for i in v))),
-                },
-            }
-            message = self._create_message(users, roles)
-            output = self.gsuite_cog._create_command_parse(
-                raw_arg=command_arg,
-                message=message,
-            )
-            # setting some parameters to be equal because of execution time :)
-            output["fields"]["start"] = output["fields"]["start"].replace(
-                # TODO solve this issue other way
-                microsecond=expected["fields"]["start"].microsecond,
-                second=expected["fields"]["start"].second,
-            )
-            self.assertDictEqual(output, expected)
+        expected = {
+            "success": True,
+            "reason": "",
+            "fields": {
+                "title": "Emergency patch meeting",
+                "start": dt.now() + timedelta(hours=2),
+                "duration": timedelta(hours=2),
+                "participants": f"{roles_mention} {users_mention}",
+                "description": "",
+                "participants_ids": list(
+                    set(users + list(i for v in roles.values() for i in v))
+                ),
+            },
+        }
+        message = self._create_message(users, roles)
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        # setting some parameters to be equal because of execution time :)
+        output["fields"]["start"] = output["fields"]["start"].replace(
+            # TODO solve this issue other way
+            microsecond=expected["fields"]["start"].microsecond,
+            second=expected["fields"]["start"].second,
+        )
+        self.assertDictEqual(output, expected)
 
     def test_create_command_parse_randomized(self):
-            users, roles = [self._random_with_n_digits(18) for _ in range(randint(10, 15))], {self._random_with_n_digits(18):[self._random_with_n_digits(18) for _ in range(randint(5, 10))] for _ in range(randint(10, 15))}
-            users_mention = " ".join([f"<@!{u}>" for u in users])
-            roles_mention = " ".join([f"<@&{r}>" for r in roles])
+        users, roles = [
+            self._random_with_n_digits(18) for _ in range(randint(10, 15))
+        ], {
+            self._random_with_n_digits(18): [
+                self._random_with_n_digits(18) for _ in range(randint(5, 10))
+            ]
+            for _ in range(randint(10, 15))
+        }
+        users_mention = " ".join([f"<@!{u}>" for u in users])
+        roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-            # TODO random mentions :)
-            command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+        # TODO random mentions :)
+        command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
 
-            expected = {
-                "success": True,
-                "reason": "",
-                "fields": {
-                    "title": "Emergency patch meeting",
-                    "start": dt.now() + timedelta(hours=2),
-                    "duration": timedelta(hours=2),
-                    "participants": f"{roles_mention} {users_mention}",
-                    "description": "",
-                    "participants_ids": list(set(users + list(i for v in roles.values() for i in v))),
-                },
-            }
-            message = self._create_message(users, roles)
-            output = self.gsuite_cog._create_command_parse(
-                raw_arg=command_arg,
-                message=message,
-            )
-            # TODO decide if this is a dirty fix for set unordering
-            expected['fields']['participants_ids'] = sorted(expected['fields']['participants_ids'])
-            output['fields']['participants_ids'] = sorted(output['fields']['participants_ids'])
+        expected = {
+            "success": True,
+            "reason": "",
+            "fields": {
+                "title": "Emergency patch meeting",
+                "start": dt.now() + timedelta(hours=2),
+                "duration": timedelta(hours=2),
+                "participants": f"{roles_mention} {users_mention}",
+                "description": "",
+                "participants_ids": list(
+                    set(users + list(i for v in roles.values() for i in v))
+                ),
+            },
+        }
+        message = self._create_message(users, roles)
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        # TODO decide if this is a dirty fix for set unordering
+        expected["fields"]["participants_ids"] = sorted(
+            expected["fields"]["participants_ids"]
+        )
+        output["fields"]["participants_ids"] = sorted(
+            output["fields"]["participants_ids"]
+        )
 
-            # setting some parameters to be equal because of execution time :)
-            output["fields"]["start"] = output["fields"]["start"].replace(
-                # TODO solve this issue other way
-                microsecond=expected["fields"]["start"].microsecond,
-                second=expected["fields"]["start"].second,
-            )
-            self.assertDictEqual(output, expected)
+        # setting some parameters to be equal because of execution time :)
+        output["fields"]["start"] = output["fields"]["start"].replace(
+            # TODO solve this issue other way
+            microsecond=expected["fields"]["start"].microsecond,
+            second=expected["fields"]["start"].second,
+        )
+        self.assertDictEqual(output, expected)
+
+    def test_create_command_parse_missing_required_fields(self):
+        command_arg = "title: Missing required fields"
+        expected = {
+            "success": False,
+            "reason": "Missing required fields: start, participants",
+            "fields": dict(),
+        }
+        message = self._create_message([], {})
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        self.assertDictEqual(output, expected)
+
+    def test_create_command_invalid_participants(self):
+        command_arg = "start: Tommorow, participants: Brooks"
+        expected = {
+            "success": False,
+            "reason": "Invalid argument for participants: Brooks",
+            "fields": dict(),
+        }
+        message = self._create_message([], {})
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        self.assertDictEqual(output, expected)
+
+        command_arg = "start: Tommorow, participants: "
+        expected = {
+            "success": False,
+            "reason": "No valid participants!",
+            "fields": dict(),
+        }
+        message = self._create_message([], {})
+        output = self.gsuite_cog._create_command_parse(
+            raw_arg=command_arg,
+            message=message,
+        )
+        self.assertDictEqual(output, expected)
 
     @staticmethod
     def _random_with_n_digits(n):
-        range_start = 10**(n-1)
-        range_end = (10**n)-1
+        range_start = 10 ** (n - 1)
+        range_end = (10 ** n) - 1
         return randint(range_start, range_end)
+
 
 if __name__ == "__main__":
     unittest.main()

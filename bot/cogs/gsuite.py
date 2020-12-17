@@ -88,11 +88,12 @@ class GSuite(commands.Cog):
             required_fields_missing = list()
             for key, value in fields.items():
                 if value == True:
-                    required_fields.append(key)
+                    required_fields_missing.append(key)
 
+            # TODO maybe remove this if the API is going to validate
             assert (
                 len(required_fields_missing) == 0
-            ), "Missing required fields: " + " ".join(required_fields)
+            ), "Missing required fields: " + ", ".join(required_fields_missing)
 
             # now parse every field
             defaults = GSuiteData.create_command_default_values
@@ -136,7 +137,8 @@ class GSuite(commands.Cog):
             print("EXCEPTION:", e, "LINE:", exc_tb.tb_lineno)
 
             data["success"] = False
-            data["reason"] = e
+            data["reason"] = str(e)
+            return data
 
         data["fields"] = fields
         return data
@@ -164,6 +166,7 @@ class GSuite(commands.Cog):
                         set([i.id for i in role.members if not i.bot])
                     )
                 except KeyError:
+                    # TODO maybe leave this validation for participants despite the API support for validating
                     assert False, "Invalid argument for participants: " + token
         assert len(participants_ids) > 0, "No valid participants!"
 
@@ -207,11 +210,6 @@ class GSuite(commands.Cog):
             },
         }
         return embed_dict
-
-    @staticmethod
-    def _roundup(x):
-        """Rounds up to the nearest 10, used mainly for rounding seconds"""
-        return int(math.ceil(x / 10.0)) * 10
 
 
 def setup(bot):
