@@ -204,7 +204,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         self.assertDictEqual(output, expected)
 
     def test_create_command_parse_missing_required_fields(self):
-        command_arg = 'title: Missing required fields'
+        command_arg = "title: Missing required fields"
         expected = {
             "success": False,
             "reason": "Missing required fields: start, participants",
@@ -218,10 +218,10 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         self.assertDictEqual(output, expected)
 
     def test_create_command_invalid_participants(self):
-        command_arg = 'start: Tommorow, participants: Brooks'
+        command_arg = "start: Tommorow, participants: Brooks"
         expected = {
             "success": False,
-            "reason": "Invalid argument for participants: Brooks", 
+            "reason": "Invalid argument for participants: Brooks",
             "fields": dict(),
         }
         message = self._create_message([], {})
@@ -230,11 +230,11 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             message=message,
         )
         self.assertDictEqual(output, expected)
-        
-        command_arg = 'start: Tommorow, participants: '
+
+        command_arg = "start: Tommorow, participants: "
         expected = {
             "success": False,
-            "reason": "No valid participants!", 
+            "reason": "No valid participants!",
             "fields": dict(),
         }
         message = self._create_message([], {})
@@ -243,7 +243,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             message=message,
         )
         self.assertDictEqual(output, expected)
-        
 
     @staticmethod
     def _random_with_n_digits(n):
