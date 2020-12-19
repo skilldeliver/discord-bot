@@ -85,7 +85,7 @@ class GSuite(commands.Cog):
             # check if the input is missing required field
             required_fields_missing = list()
             for key, value in fields.items():
-                if value:
+                if value is True:
                     required_fields_missing.append(key)
 
             # TODO maybe remove this if the API is going to validate
