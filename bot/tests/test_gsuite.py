@@ -22,6 +22,7 @@ class DiscordGuildStub:
             ]
         )
 
+
 DiscordAuthorMock = namedtuple("DiscordAuthorMock", "display_name avatar_url")
 
 
@@ -248,10 +249,11 @@ class TestGSuiteCreateCommand(unittest.TestCase):
                 "name": "Skilldeliver created an event",
                 "icon_url": "https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
             },
-            "fields": 
-                    [{'name': 'Starts at: ', 'value': '11, Dec (Friday) at 16:00'},
-                     {'name': 'Ends at: ', 'value': '11, Dec (Friday) at 17:00'},
-                    {"name": "Participants: ", "value": "<@451118248616787968>"},]
+            "fields": [
+                {"name": "Starts at: ", "value": "11, Dec (Friday) at 16:00"},
+                {"name": "Ends at: ", "value": "11, Dec (Friday) at 17:00"},
+                {"name": "Participants: ", "value": "<@451118248616787968>"},
+            ],
         }
         output = self.gsuite_cog._create_command_embed_dict(data, author)
         self.assertDictEqual(expected, output)
