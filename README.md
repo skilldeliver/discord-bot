@@ -4,8 +4,13 @@ A Discord bot allowing (hopefully) easy 2-way sync of events between Discord and
 1. Install [Python3.8](https://www.python.org/downloads/release/python-380/) and [Pipenv](https://pypi.org/project/pipenv/)
 2. Clone this repository
 3. Run `pipenv install`
-4. Run `pipenv run start` 
-5. Drink water
+4. Set the bot token as an enviorment variable `BOT_TOKEN`
+5. Run `pipenv run start`
+6. Drink water
 
 # How to run with Docker:
 docker run -e BOT_TOKEN=[token] [container_image_name]
+
+# TODOs
+- [ ] Rename of this repo to `discord-bot` because the bot can have many submodules?
+- [ ] ora.pm submodule - connect with Vasil Enchev about this issue
