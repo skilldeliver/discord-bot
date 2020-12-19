@@ -5,8 +5,9 @@ import unittest
 
 from random import randint
 from bot.cogs.gsuite import GSuite
+from bot.constants import Color
 
-# TODO write dummy structures for these below:
+
 class DiscordGuildStub:
     def __init__(self, roles_members_map):
         self.roles_membeers_map = roles_members_map
@@ -20,6 +21,8 @@ class DiscordGuildStub:
                 for m in self.roles_membeers_map[role]
             ]
         )
+
+DiscordAuthorMock = namedtuple("DiscordAuthorMock", "display_name avatar_url")
 
 
 class DiscordMessageMock:
@@ -118,7 +121,8 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "Emergency patch meeting",
-                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(hours=2),
+                "start": GSuite._set_dt_resolution_to_min(dt.now())
+                + timedelta(hours=2),
                 "duration": timedelta(hours=2),
                 "participants": f"{roles_mention} {users_mention}",
                 "description": "",
@@ -154,7 +158,8 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "Emergency patch meeting",
-                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(hours=2),
+                "start": GSuite._set_dt_resolution_to_min(dt.now())
+                + timedelta(hours=2),
                 "duration": timedelta(hours=2),
                 "participants": f"{roles_mention} {users_mention}",
                 "description": "",
@@ -218,13 +223,68 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         self.assertDictEqual(output, expected)
 
+    def test_create_command_embed_success(self):
+        author = DiscordAuthorMock(
+            display_name="Skilldeliver",
+            avatar_url="https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+        )
+        data = {
+            "success": True,
+            "reason": "",
+            "fields": {
+                "title": "General meeting",
+                "start": dt(2020, 12, 11, 16, 0),
+                "duration": timedelta(seconds=3600),
+                "participants": "<@451118248616787968>",
+                "description": "A meeting for adressing general questions.",
+                "partcipants_ids": [451118248616787968],
+            },
+        }
+        expected = {
+            "title": "General meeting",
+            "description": "A meeting for adressing general questions.",
+            "color": Color.green,
+            "author": {
+                "name": "Skilldeliver created an event",
+                "icon_url": "https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+            },
+            "fields": 
+                    [{'name': 'Starts at: ', 'value': '11, Dec (Friday) at 16:00'},
+                     {'name': 'Ends at: ', 'value': '11, Dec (Friday) at 17:00'},
+                    {"name": "Participants: ", "value": "<@451118248616787968>"},]
+        }
+        output = self.gsuite_cog._create_command_embed_dict(data, author)
+        self.assertDictEqual(expected, output)
+
+    def test_create_command_embed_failed(self):
+        author = DiscordAuthorMock(
+            display_name="Skilldeliver",
+            avatar_url="https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+        )
+        data = {
+            "success": False,
+            "reason": "Invalid argument for participants: pi4",
+            "fiealds": {},
+        }
+
+        expected = {
+            "title": "Error!",
+            "description": "Invalid argument for participants: pi4",
+            "color": Color.red,
+            "author": {
+                "name": "Skilldeliver attempted to create an event",
+                "icon_url": "https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+            },
+        }
+        output = self.gsuite_cog._create_command_embed_dict(data, author)
+        self.assertDictEqual(expected, output)
+
     @staticmethod
     def _random_with_n_digits(n):
         range_start = 10 ** (n - 1)
         range_end = (10 ** n) - 1
         return randint(range_start, range_end)
 
-    
 
 if __name__ == "__main__":
     unittest.main()

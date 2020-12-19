@@ -135,8 +135,6 @@ class GSuite(commands.Cog):
             )
 
         except Exception as e:
-            _, _, exc_tb = sys.exc_info()
-            print("EXCEPTION:", e, "LINE:", exc_tb.tb_lineno)
 
             data["success"] = False
             data["reason"] = str(e)
@@ -180,8 +178,16 @@ class GSuite(commands.Cog):
             data = data["fields"]
             fields = list()
             fields = [
-                {"name": "Starts at: ", "value": str(data["start"])},
-                {"name": "Ends at: ", "value": str(data["start"] + data["duration"])},
+                {
+                    "name": "Starts at: ",
+                    "value": data["start"].strftime("%d, %b (%A) at %H:%M"),
+                },
+                {
+                    "name": "Ends at: ",
+                    "value": (data["start"] + data["duration"]).strftime(
+                        "%d, %b (%A) at %H:%M"
+                    ),
+                },
                 {"name": "Participants: ", "value": data["participants"]},
             ]
 
