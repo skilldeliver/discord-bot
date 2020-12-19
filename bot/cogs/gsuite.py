@@ -1,5 +1,4 @@
 from datetime import datetime as dt, timedelta
-import sys
 
 import dateparser as dp
 import discord
@@ -86,7 +85,7 @@ class GSuite(commands.Cog):
             # check if the input is missing required field
             required_fields_missing = list()
             for key, value in fields.items():
-                if value == True:
+                if value:
                     required_fields_missing.append(key)
 
             # TODO maybe remove this if the API is going to validate

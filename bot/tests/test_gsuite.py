@@ -1,5 +1,4 @@
 from collections import namedtuple
-import time
 from datetime import datetime as dt, timedelta
 import unittest
 
@@ -83,7 +82,12 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         users_mention = " ".join([f"<@!{u}>" for u in users])
         roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-        command_arg = f"participants: {users_mention} {roles_mention}, duration: 1 hour and 30 minutes, description: This is an event for our sprint planning, title: Sprint planning, start: In 3 days, "
+        command_arg = (
+            f"participants: {users_mention} {roles_mention}, "
+            "duration: 1 hour and 30 minutes, "
+            "description: This is an event for our sprint planning, "
+            "title: Sprint planning, start: In 3 days, "
+        )
 
         expected = {
             "success": True,
@@ -115,7 +119,12 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         users_mention = " ".join([f"<@!{u}>" for u in users])
         roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-        command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+        command_arg = (
+            "start: In 2 hours, "
+            "end: In 4 hours, "
+            "title: Emergency patch meeting, "
+            f"participants: {roles_mention} {users_mention}"
+        )
 
         expected = {
             "success": True,
@@ -152,7 +161,12 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
         # TODO random mentions :)
-        command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+        command_arg = (
+            "start: In 2 hours, "
+            "end: In 4 hours, "
+            "title: Emergency patch meeting, "
+            f"participants: {roles_mention} {users_mention}"
+        )
 
         expected = {
             "success": True,
