@@ -47,7 +47,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         return message
 
-    # TODO refactor this, please, somehow :
     def test_create_command_parse_defaults(self):
         """
         Test case for default values of create command parsing
@@ -225,6 +224,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         range_end = (10 ** n) - 1
         return randint(range_start, range_end)
 
+    
 
 if __name__ == "__main__":
     unittest.main()
