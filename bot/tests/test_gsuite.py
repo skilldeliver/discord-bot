@@ -1,12 +1,12 @@
 from collections import namedtuple
-import time
 from datetime import datetime as dt, timedelta
 import unittest
 
 from random import randint
 from bot.cogs.gsuite import GSuite
+from bot.constants import Color
 
-# TODO write dummy structures for these below:
+
 class DiscordGuildStub:
     def __init__(self, roles_members_map):
         self.roles_membeers_map = roles_members_map
@@ -20,6 +20,9 @@ class DiscordGuildStub:
                 for m in self.roles_membeers_map[role]
             ]
         )
+
+
+DiscordAuthorMock = namedtuple("DiscordAuthorMock", "display_name avatar_url")
 
 
 class DiscordMessageMock:
@@ -47,7 +50,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         return message
 
-    # TODO refactor this, please, somehow :
     def test_create_command_parse_defaults(self):
         """
         Test case for default values of create command parsing
@@ -62,7 +64,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "No title",
-                "start": dt.now() + timedelta(days=7),
+                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(days=7),
                 "duration": timedelta(hours=1),
                 "participants": f"{users_mention}",
                 "description": "",
@@ -73,12 +75,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         output = self.gsuite_cog._create_command_parse(
             raw_arg=command_arg, message=message
         )
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
-        )
         self.assertDictEqual(output, expected)
 
     def test_create_command_parse_unordered(self):
@@ -86,14 +82,19 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         users_mention = " ".join([f"<@!{u}>" for u in users])
         roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-        command_arg = f"participants: {users_mention} {roles_mention}, duration: 1 hour and 30 minutes, description: This is an event for our sprint planning, title: Sprint planning, start: In 3 days, "
+        command_arg = (
+            f"participants: {users_mention} {roles_mention}, "
+            "duration: 1 hour and 30 minutes, "
+            "description: This is an event for our sprint planning, "
+            "title: Sprint planning, start: In 3 days, "
+        )
 
         expected = {
             "success": True,
             "reason": "",
             "fields": {
                 "title": "Sprint planning",
-                "start": dt.now() + timedelta(days=3),
+                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(days=3),
                 "duration": timedelta(hours=1, minutes=30),
                 "participants": f"{users_mention} {roles_mention}",
                 "description": "This is an event for our sprint planning",
@@ -104,12 +105,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         output = self.gsuite_cog._create_command_parse(
             raw_arg=command_arg,
             message=message,
-        )
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 
@@ -124,14 +119,20 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         users_mention = " ".join([f"<@!{u}>" for u in users])
         roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
-        command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+        command_arg = (
+            "start: In 2 hours, "
+            "end: In 4 hours, "
+            "title: Emergency patch meeting, "
+            f"participants: {roles_mention} {users_mention}"
+        )
 
         expected = {
             "success": True,
             "reason": "",
             "fields": {
                 "title": "Emergency patch meeting",
-                "start": dt.now() + timedelta(hours=2),
+                "start": GSuite._set_dt_resolution_to_min(dt.now())
+                + timedelta(hours=2),
                 "duration": timedelta(hours=2),
                 "participants": f"{roles_mention} {users_mention}",
                 "description": "",
@@ -144,12 +145,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         output = self.gsuite_cog._create_command_parse(
             raw_arg=command_arg,
             message=message,
-        )
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 
@@ -166,14 +161,20 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         roles_mention = " ".join([f"<@&{r}>" for r in roles])
 
         # TODO random mentions :)
-        command_arg = f"start: In 2 hours, end: In 4 hours, title: Emergency patch meeting, participants: {roles_mention} {users_mention}"
+        command_arg = (
+            "start: In 2 hours, "
+            "end: In 4 hours, "
+            "title: Emergency patch meeting, "
+            f"participants: {roles_mention} {users_mention}"
+        )
 
         expected = {
             "success": True,
             "reason": "",
             "fields": {
                 "title": "Emergency patch meeting",
-                "start": dt.now() + timedelta(hours=2),
+                "start": GSuite._set_dt_resolution_to_min(dt.now())
+                + timedelta(hours=2),
                 "duration": timedelta(hours=2),
                 "participants": f"{roles_mention} {users_mention}",
                 "description": "",
@@ -193,13 +194,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         output["fields"]["participants_ids"] = sorted(
             output["fields"]["participants_ids"]
-        )
-
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 
@@ -243,6 +237,63 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             message=message,
         )
         self.assertDictEqual(output, expected)
+
+    def test_create_command_embed_success(self):
+        author = DiscordAuthorMock(
+            display_name="Skilldeliver",
+            avatar_url="https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+        )
+        data = {
+            "success": True,
+            "reason": "",
+            "fields": {
+                "title": "General meeting",
+                "start": dt(2020, 12, 11, 16, 0),
+                "duration": timedelta(seconds=3600),
+                "participants": "<@451118248616787968>",
+                "description": "A meeting for adressing general questions.",
+                "partcipants_ids": [451118248616787968],
+            },
+        }
+        expected = {
+            "title": "General meeting",
+            "description": "A meeting for adressing general questions.",
+            "color": Color.green,
+            "author": {
+                "name": "Skilldeliver created an event",
+                "icon_url": "https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+            },
+            "fields": [
+                {"name": "Starts at: ", "value": "11, Dec (Friday) at 16:00"},
+                {"name": "Ends at: ", "value": "11, Dec (Friday) at 17:00"},
+                {"name": "Participants: ", "value": "<@451118248616787968>"},
+            ],
+        }
+        output = self.gsuite_cog._create_command_embed_dict(data, author)
+        self.assertDictEqual(expected, output)
+
+    def test_create_command_embed_failed(self):
+        author = DiscordAuthorMock(
+            display_name="Skilldeliver",
+            avatar_url="https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+        )
+        data = {
+            "success": False,
+            "reason": "Invalid argument for participants: pi4",
+            "fiealds": {},
+        }
+
+        expected = {
+            "title": "Error!",
+            "description": "Invalid argument for participants: pi4",
+            "color": Color.red,
+            "author": {
+                "name": "Skilldeliver attempted to create an event",
+                "icon_url": "https://cdn.discordapp.com/avatars/365859941292048384/3ff06472fa40b463dec368f818fbe3e7.png",
+            },
+        }
+        output = self.gsuite_cog._create_command_embed_dict(data, author)
+        self.assertDictEqual(expected, output)
 
     @staticmethod
     def _random_with_n_digits(n):
