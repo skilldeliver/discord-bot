@@ -62,7 +62,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "No title",
-                "start": dt.now() + timedelta(days=7),
+                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(days=7),
                 "duration": timedelta(hours=1),
                 "participants": f"{users_mention}",
                 "description": "",
@@ -72,12 +72,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         message = self._create_message(users, {})
         output = self.gsuite_cog._create_command_parse(
             raw_arg=command_arg, message=message
-        )
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 
@@ -93,7 +87,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "Sprint planning",
-                "start": dt.now() + timedelta(days=3),
+                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(days=3),
                 "duration": timedelta(hours=1, minutes=30),
                 "participants": f"{users_mention} {roles_mention}",
                 "description": "This is an event for our sprint planning",
@@ -104,12 +98,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         output = self.gsuite_cog._create_command_parse(
             raw_arg=command_arg,
             message=message,
-        )
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 
@@ -131,7 +119,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "Emergency patch meeting",
-                "start": dt.now() + timedelta(hours=2),
+                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(hours=2),
                 "duration": timedelta(hours=2),
                 "participants": f"{roles_mention} {users_mention}",
                 "description": "",
@@ -144,12 +132,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         output = self.gsuite_cog._create_command_parse(
             raw_arg=command_arg,
             message=message,
-        )
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 
@@ -173,7 +155,7 @@ class TestGSuiteCreateCommand(unittest.TestCase):
             "reason": "",
             "fields": {
                 "title": "Emergency patch meeting",
-                "start": dt.now() + timedelta(hours=2),
+                "start": GSuite._set_dt_resolution_to_min(dt.now()) + timedelta(hours=2),
                 "duration": timedelta(hours=2),
                 "participants": f"{roles_mention} {users_mention}",
                 "description": "",
@@ -193,13 +175,6 @@ class TestGSuiteCreateCommand(unittest.TestCase):
         )
         output["fields"]["participants_ids"] = sorted(
             output["fields"]["participants_ids"]
-        )
-
-        # setting some parameters to be equal because of execution time :)
-        output["fields"]["start"] = output["fields"]["start"].replace(
-            # TODO solve this issue other way
-            microsecond=expected["fields"]["start"].microsecond,
-            second=expected["fields"]["start"].second,
         )
         self.assertDictEqual(output, expected)
 

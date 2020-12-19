@@ -82,7 +82,6 @@ class GSuite(commands.Cog):
                         fields[field_name] = arg.split(field_token)[1].strip()
                         break
             # fields contain only string values by now
-            print(fields)
 
             # check if the input is missing required field
             required_fields_missing = list()
@@ -99,7 +98,7 @@ class GSuite(commands.Cog):
             defaults = GSuiteData.create_command_default_values
             # TODO add check if command is passed in the past
             # START AND TITLE:
-            fields["start"] = dp.parse(fields["start"])
+            fields["start"] = self._set_dt_resolution_to_min(dp.parse(fields["start"]))
             fields["title"] = fields["title"] if fields["title"] else defaults["title"]
             # DESCRIPION:
             fields["description"] = (
@@ -109,7 +108,10 @@ class GSuite(commands.Cog):
             )
             # END:
             fields["duration"] = (
-                (dp.parse(fields["end"]) - fields["start"])
+                (
+                    self._set_dt_resolution_to_min(dp.parse(fields["end"]))
+                    - fields["start"]
+                )
                 if fields["end"]
                 else fields["duration"]
             )
@@ -210,6 +212,15 @@ class GSuite(commands.Cog):
             },
         }
         return embed_dict
+
+    @staticmethod
+    def _set_dt_resolution_to_min(obj: dt) -> dt:
+        """
+        Sets the resolution of a datetime object to minutes
+        """
+        if obj is not None:
+            obj = obj.replace(second=0, microsecond=0)
+        return obj
 
 
 def setup(bot):
