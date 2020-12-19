@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ main, dev, staging]
 
+defaults:
+  run:
+    working-directory: src
+
 jobs:
   build:
 
@@ -24,7 +28,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pipenv
-        cd src
         pipenv install --dev
     - name: Run linting
       run: |
