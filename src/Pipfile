@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 "discord.py" = "*"
 dateparser = "*"
+aiomysql = "*"
 
 [dev-packages]
 flake8 = "*"
@@ -16,5 +17,4 @@ python_version = "3.8"
 [scripts]
 start = "python -m bot"
 test = "python -m unittest discover bot/tests"
-
 lint = "flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics"
