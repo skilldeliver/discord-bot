@@ -29,35 +29,71 @@ class BotDataBase:
     async def __init__(self):
         self.conn = await aiomysql.connect(
             user=environ["DB_USER"],
-            password=environ["DB_PASS"].strip("'"),
+            password=environ["DB_PASS"].strip("'"), 
             db=environ["DB_NAME"],
             port=int(environ["DB_PORT"]),
             host="localhost",
             autocommit=True,
         )
+        await self._create_tables()
 
     async def _create_tables(self):
-        await self.__create_users_table('')
+        await self.__create_user_table()
+        await self.__create_role_table()
+        await self.__create_user_roles_table()
+        await self.__create_bot_administrators_table()
 
-    async def __create_users_table(self):
+    async def __create_user_table(self):
         query = """
-            CREATE TABLE IF NOT EXISTS users (
-                        discord_id BIGINT NOT NULL,
+            CREATE TABLE IF NOT EXISTS user (
+                        id BIGINT NOT NULL,
                         email TEXT,
-                        discord_username TEXT,
-                        discord_avatar TEXT,
-                        server_nickname TEXT
+                        username TEXT,
+                        avatar TEXT,
+                        nickname TEXT,
+                        PRIMARY KEY (id)
                     )
         """
         async with self.conn.cursor() as cur:
             await cur.execute(query)
 
     
-    async def _create_roles_table(self):
-        pass
+    async def __create_role_table(self):
+        query = """
+            CREATE TABLE IF NOT EXISTS role (
+                        id BIGINT NOT NULL,
+                        name TEXT,
+                        color INT,
+                        admin_panel_access BOOLEAN,
+                        PRIMARY KEY (id)
+                    )
+        """
+        async with self.conn.cursor() as cur:
+            await cur.execute(query)
     
-    async def _create_administrators_table(self):
-        pass
+    async def __create_user_roles_table(self):
+        query = """
+            CREATE TABLE IF NOT EXISTS user_roles (
+                        user_id BIGINT,
+                        role_id BIGINT,
+                        FOREIGN KEY (user_id) REFERENCES user(id),
+                        FOREIGN KEY (role_id) REFERENCES role(id),
+                        PRIMARY KEY (user_id, role_id)
+                    )
+        """
+        async with self.conn.cursor() as cur:
+            await cur.execute(query)
+
+    async def __create_bot_administrators_table(self):
+        query = """
+            CREATE TABLE IF NOT EXISTS bot_administrators (
+                        role_id BIGINT,
+                        FOREIGN KEY (role_id) REFERENCES role(id),
+                        PRIMARY KEY (role_id)
+                    )
+        """
+        async with self.conn.cursor() as cur:
+            await cur.execute(query)
 
     async def fetch_info(members, roles):
         pass
