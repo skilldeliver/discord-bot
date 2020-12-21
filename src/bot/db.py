@@ -36,6 +36,12 @@ class BotDataBase:
             autocommit=True,
         )
 
+    async def _create_tables():
+        pass
+
+    async def fetch_info(members, roles):
+        pass
+
     async def insert_administrator(self, role_id: int) -> None:
         """Inserts a administrator role with role id into the database."""
 
