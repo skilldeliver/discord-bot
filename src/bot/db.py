@@ -36,7 +36,27 @@ class BotDataBase:
             autocommit=True,
         )
 
-    async def _create_tables():
+    async def _create_tables(self):
+        await self.__create_users_table('')
+
+    async def __create_users_table(self):
+        query = """
+            CREATE TABLE IF NOT EXISTS users (
+                        discord_id BIGINT NOT NULL,
+                        email TEXT,
+                        discord_username TEXT,
+                        discord_avatar TEXT,
+                        server_nickname TEXT
+                    )
+        """
+        async with self.conn.cursor() as cur:
+            await cur.execute(query)
+
+    
+    async def _create_roles_table(self):
+        pass
+    
+    async def _create_administrators_table(self):
         pass
 
     async def fetch_info(members, roles):
