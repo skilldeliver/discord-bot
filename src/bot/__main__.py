@@ -20,12 +20,10 @@ async def main():
     # create a Client object
     bot = BotClient(command_prefix=PREFIX, intents=intents)
 
-    # initialise the bot db
-    await bot.load_db()
-
     # run the bot with enviroment variable
     token = os.environ["BOT_TOKEN"]
     await bot.start(token)
+
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())

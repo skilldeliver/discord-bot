@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 PREFIX = "%"
+PODKREPI_BG_GUILD_ID = 778984868146577458
 
 
 @dataclass

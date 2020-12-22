@@ -15,7 +15,8 @@ class GSuite(commands.Cog):
     async def administrators(self, ctx, arg):
         # TODO should add initial check who can use this command
         # maybe only people with admin permissions
-        """Sets a role or members to be administrators of the bot"""
+        # self.bot.reload_extension(f"bot.cogs.{arg}")
+        # await ctx.send(f"bot.cogs.{arg} reloaded.")
         pass
 
     @commands.command()
