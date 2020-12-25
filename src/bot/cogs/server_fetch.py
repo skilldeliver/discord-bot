@@ -22,37 +22,25 @@ class ServerFetch(commands.Cog):
         """Fetches Discord information into the DB."""
         
         assert self.guild is not None, "Server fetching failed, can't find the guild."
-
-        # for role in sorted(await self.guild.fetch_roles()):
-        #     print(await self.bot.db.get_role_has_panel_access(role.id)) 
-        #     # TODO
-        #     continue # from here
-        #     await self.bot.db.update_role(
-        #                 discord_role_id=role.id,
-        #                 name=role.name,
-        #                 color=role.color.value,
-        #                 has_pannel_access=bool(discord.Permissions.administrator in role.permissions),
-        #                 updated_at=dt.now(),
-        #                 created_at=role.created_at
-        #     )
-
-        data = []
+ 
         s = time()
+        # Fetching roles into the db after bot start
+        roles_data = []
+        for role in sorted(await self.guild.fetch_roles()):
+                args = self.__role_to_dict(role)
+                roles_data.append(args)
+
+        await self.bot.db.update_roles(roles_data)
+        
+        # Fetching users into the db after bot start
+        users_data = []
         async for member in self.guild.fetch_members(limit=None):
             if not member.bot:
-                args = dict(
-                    discord_user_id = member.id,
-                    discord_username = str(member),
-                    server_nickname = member.display_name,
-                    discord_avatar_hash = hash(member.avatar_url),
-                    updated_at=dt.now(),
-                    created_at=dt.now()
-                    )
-                data.append(args)
+                args = self.__user_to_dict(member)
+                users_data.append(args)
 
-        print('Filled!')
         # TODO deleting users that left the server?
-        await self.bot.db.update_users(data)
+        await self.bot.db.update_users(users_data)
         e = time()
         print('Done!', e-s)
 
@@ -62,16 +50,6 @@ class ServerFetch(commands.Cog):
     @db_fetcher.before_loop
     async def db_fetcher_wait(self):
         await self.bot.wait_until_ready()
-
-    async def __update_member(self, member):
-        pass
-        # await self.bot.db.update_user(
-        #     discord_user_id=member.id,
-        #     discord_username=str(member),
-        #     server_nickname=member.display_name,
-        #     discord_avatar_hash=hash(member.avatar_url),
-        #     updated_at=dt.now(),
-        # )
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -104,6 +82,26 @@ class ServerFetch(commands.Cog):
     # on_guild_role_create
     # on_guild_role_delete
     # on_guild_role_update
+
+    def __role_to_dict(self, role: discord.Role) -> dict:
+         return  dict(
+                    discord_role_id=role.id,
+                    name=role.name,
+                    color=role.color.value, 
+                    has_pannel_access=bool(discord.Permissions.administrator in role.permissions),
+                    updated_at=dt.now(),
+                    created_at=role.created_at
+                    )
+    
+    def __user_to_dict(self, member: discord.User) -> dict:
+        return dict(
+                    discord_user_id=member.id,
+                    discord_username=str(member),
+                    server_nickname=member.display_name,
+                    discord_avatar_hash=hash(member.avatar_url),
+                    updated_at=dt.now(),
+                    created_at=dt.now()
+                    )
 
 
 def setup(bot):

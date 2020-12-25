@@ -126,14 +126,14 @@ class BotDataBase:
         """
         
         query = """
-            INSERT INTO users (discord_user_id, discord_username, 
+            INSERT INTO users (discord_user_id, discord_username,
                               server_nickname, discord_avatar_hash, 
                               updated_at, created_at)
             VALUES (%(discord_user_id)s, %(discord_username)s, 
                     %(server_nickname)s, %(discord_avatar_hash)s,
                     %(updated_at)s, %(created_at)s)
             ON DUPLICATE KEY UPDATE
-                discord_username=VALUES(discord_username), 
+                discord_username=VALUES(discord_username),
                 server_nickname=VALUES(server_nickname),
                 discord_avatar_hash=VALUES(discord_avatar_hash),
                 updated_at=VALUES(updated_at)
@@ -171,41 +171,26 @@ class BotDataBase:
                 ),
             )
 
-    async def update_role(
+    async def update_roles(
         self,
-        discord_role_id,
-        name,
-        color,
-        has_pannel_access,
-        updated_at,
-        created_at
+        data: list
     ):
+        # NOTE: not updating has panel access if a new role has an admin permissions 
         query = """
-            REPLACE INTO roles(discord_role_id, name, color, updated_at)
-            VALUES (%s, %s, %s, %s);
-            UPDATE roles
-            SET created_at = %s
-            WHERE discord_role_id = %s AND created_at IS NULL;
-            UPDATE roles
-            SET has_panel_access = %s
-            WHERE discord_role_id = %s AND has_panel_access IS NULL;
-        """
-        # TODO replace %s place holders with name keys
+            INSERT INTO roles (discord_role_id, name,
+                              color, has_pannel_access, 
+                              updated_at, created_at)
+            VALUES (%(discord_role_id)s, %(name)s, 
+                    %(color)s, %(has_pannel_access)s,
+                    %(updated_at)s, %(created_at)s)
+            ON DUPLICATE KEY UPDATE
+                name=VALUES(name),
+                color=VALUES(color),
+                updated_at=VALUES(updated_at)
+            """
 
         async with self.conn.cursor() as cur:
-            await cur.execute(
-                query,
-                (
-                    discord_role_id,
-                    name,
-                    color,
-                    updated_at,
-                    created_at,
-                    discord_role_id,
-                    has_pannel_access,
-                    discord_role_id
-                ),
-            )
+            await cur.executemany(query, data)
 
     async def get_role_has_panel_access(self, role_id):
         query = """
