@@ -23,22 +23,38 @@ class ServerFetch(commands.Cog):
         
         assert self.guild is not None, "Server fetching failed, can't find the guild."
 
-        async for member in guild.fetch_members(limit=None):
-            if not member.bot:
-                mem = {
-                    "id": member.id,
-                    "nickname": member.display_name,
-                    "username": str(member),
-                }
+        # for role in sorted(await self.guild.fetch_roles()):
+        #     print(await self.bot.db.get_role_has_panel_access(role.id)) 
+        #     # TODO
+        #     continue # from here
+        #     await self.bot.db.update_role(
+        #                 discord_role_id=role.id,
+        #                 name=role.name,
+        #                 color=role.color.value,
+        #                 has_pannel_access=bool(discord.Permissions.administrator in role.permissions),
+        #                 updated_at=dt.now(),
+        #                 created_at=role.created_at
+        #     )
 
-                await self.bot.db.update_user(
-                    discord_user_id=member.id,
-                    discord_username=str(member),
-                    server_nickname=member.display_name,
-                    discord_avatar_hash=hash(member.avatar_url),
+        data = []
+        s = time()
+        async for member in self.guild.fetch_members(limit=None):
+            if not member.bot:
+                args = dict(
+                    discord_user_id = member.id,
+                    discord_username = str(member),
+                    server_nickname = member.display_name,
+                    discord_avatar_hash = hash(member.avatar_url),
                     updated_at=dt.now(),
-                )
-                print(member.name)
+                    created_at=dt.now()
+                    )
+                data.append(args)
+
+        print('Filled!')
+        # TODO deleting users that left the server?
+        await self.bot.db.update_users(data)
+        e = time()
+        print('Done!', e-s)
 
     def cog_unload(self):
         self.db_fetcher.cancel()
@@ -48,20 +64,21 @@ class ServerFetch(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def __update_member(self, member):
-        await self.bot.db.update_user(
-            discord_user_id=member.id,
-            discord_username=str(member),
-            server_nickname=member.display_name,
-            discord_avatar_hash=hash(member.avatar_url),
-            updated_at=dt.now(),
-        )
+        pass
+        # await self.bot.db.update_user(
+        #     discord_user_id=member.id,
+        #     discord_username=str(member),
+        #     server_nickname=member.display_name,
+        #     discord_avatar_hash=hash(member.avatar_url),
+        #     updated_at=dt.now(),
+        # )
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if not member.bot:
             await self.__update_member(member)
 
-    @command.Cog.listener()
+    @commands.Cog.listener()
     async def on_member_remove(self, member):
         if not member.bot:
             await self.bot.db.delete_user(member.id)
@@ -75,9 +92,9 @@ class ServerFetch(commands.Cog):
     async def on_user_update(self, before, after):
         if not after.bot:
             member = self.guild.get_member(after.id)
-        assert member is not None, 'Failed fetching user update'
+            assert member is not None, 'Failed fetching user update'
 
-        await self.__update_member(member)
+            await self.__update_member(member)
 
     # on_member_join
     # on_member_remove
