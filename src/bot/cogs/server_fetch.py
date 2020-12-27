@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime as dt, timedelta
 from pathlib import PurePath
 import dateparser as dp
@@ -31,16 +32,27 @@ class ServerFetch(commands.Cog):
                 roles_data.append(args)
 
         await self.bot.db.update_roles(roles_data)
-        
+
         # Fetching users into the db after bot start
         users_data = []
+        users_roles = []
         async for member in self.guild.fetch_members(limit=None):
             if not member.bot:
                 args = self.__user_to_dict(member)
                 users_data.append(args)
 
-        # TODO deleting users that left the server?
+                for role in member.roles:
+                    args = {
+                        'user_id': member.id,
+                        'role_id': role.id,
+                        'updated_at': dt.now(),
+                        'created_at': dt.now()
+                    }
+                    users_roles.append(args)
+
+        # TODO deleting users that left the server
         await self.bot.db.update_users(users_data)
+        await self.bot.db.update_role_user(users_roles)
         e = time()
         print('Done!', e-s)
 
@@ -88,7 +100,7 @@ class ServerFetch(commands.Cog):
                     discord_role_id=role.id,
                     name=role.name,
                     color=role.color.value, 
-                    has_pannel_access=bool(discord.Permissions.administrator in role.permissions),
+                    has_pannel_access=role.permissions.administrator,
                     updated_at=dt.now(),
                     created_at=role.created_at
                     )

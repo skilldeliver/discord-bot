@@ -127,7 +127,7 @@ class BotDataBase:
         
         query = """
             INSERT INTO users (discord_user_id, discord_username,
-                              server_nickname, discord_avatar_hash, 
+                              server_nickname, discord_avatar_hash,
                               updated_at, created_at)
             VALUES (%(discord_user_id)s, %(discord_username)s, 
                     %(server_nickname)s, %(discord_avatar_hash)s,
@@ -148,28 +148,6 @@ class BotDataBase:
         """
         async with self.conn.cursor() as cur:
             await cur.execute(query, (discord_user_id,))
-
-    async def update_role_user(self, user_id, role_id, updated_at):
-        query = """
-            REPLACE INTO users(user_id, role_id, updated_at)
-            VALUES (%s, %s, %s);
-            UPDATE users
-            SET created_at = %s
-            WHERE discord_user_id = %s AND created_at IS NULL;
-        """
-        # TODO replace %s place holders with name keys
-
-        async with self.conn.cursor() as cur:
-            await cur.execute(
-                query,
-                (
-                    user_id,
-                    role_id,
-                    updated_at,
-                    updated_at,
-                    user_id
-                ),
-            )
 
     async def update_roles(
         self,
@@ -209,6 +187,20 @@ class BotDataBase:
         """
         async with self.conn.cursor() as cur:
             await cur.execute(query, (role_id,))
+
+    async def update_role_user(self, data):
+        # TODO do form of data
+        query = """
+            INSERT INTO role_user (user_id, role_id,
+                                   updated_at, created_at)
+            VALUES (%(user_id)s, %(role_id)s,
+                    %(updated_at)s, %(created_at)s)
+            ON DUPLICATE KEY UPDATE
+                updated_at=VALUES(updated_at)
+        """
+
+        async with self.conn.cursor() as cur:
+            await cur.executemany(query, data)
 
     async def get_all_administrators(self):
         query = """
