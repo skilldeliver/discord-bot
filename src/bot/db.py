@@ -37,6 +37,12 @@ class BotDataBase:
         )
         await self._create_tables()
 
+    #TODO: remove this function for debuging purposes
+    async def query(self, arg):
+        async with self.conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute(arg)
+            return await cur.fetchall()
+
     async def _create_tables(self):
         await self.__create_user_table()
         await self.__create_role_table()
@@ -55,7 +61,7 @@ class BotDataBase:
             `created_at` timestamp NULL DEFAULT NULL,
             `updated_at` timestamp NULL DEFAULT NULL,
             PRIMARY KEY (`discord_user_id`)
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
         async with self.conn.cursor() as cur:
             await cur.execute(query)
@@ -70,7 +76,7 @@ class BotDataBase:
             `created_at` timestamp NULL DEFAULT NULL,
             `updated_at` timestamp NULL DEFAULT NULL,
             PRIMARY KEY (`discord_role_id`)
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
         async with self.conn.cursor() as cur:
             await cur.execute(query)
@@ -90,7 +96,7 @@ class BotDataBase:
             CONSTRAINT `role_user_user_id_foreign` 
                 FOREIGN KEY (`user_id`) REFERENCES `users` (`discord_user_id`) 
                 ON DELETE CASCADE ON UPDATE CASCADE
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
         async with self.conn.cursor() as cur:
             await cur.execute(query)
@@ -124,7 +130,7 @@ class BotDataBase:
             ...
             ]
         """
-        
+
         query = """
             INSERT INTO users (discord_user_id, discord_username,
                               server_nickname, discord_avatar_hash,
@@ -140,14 +146,6 @@ class BotDataBase:
         """
         async with self.conn.cursor() as cur:
             await cur.executemany(query, data)
-
-
-    async def delete_user(self, discord_user_id):
-        query = """
-            DELETE FROM users WHERE discord_user_id=%s;
-        """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query, (discord_user_id,))
 
     async def update_roles(
         self,
@@ -170,26 +168,8 @@ class BotDataBase:
         async with self.conn.cursor() as cur:
             await cur.executemany(query, data)
 
-    async def get_role_has_panel_access(self, role_id):
-        query = """
-        SELECT has_panel_access FROM roles WHERE discord_role_id=%s; 
-        """
-        async with self.conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute(query, (role_id, ))
-            return await cur.fetch()
-
-    async def insert_administrator(self, role_id: int) -> None:
-        """Inserts a administrator role with role id into the database."""
-
-        query = """
-            INSERT INTO administrators (role)
-            VALUES (%s)
-        """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query, (role_id,))
-
     async def update_role_user(self, data):
-        # TODO do form of data
+        # TODO Write docstring of the form of data
         query = """
             INSERT INTO role_user (user_id, role_id,
                                    updated_at, created_at)
@@ -201,6 +181,33 @@ class BotDataBase:
 
         async with self.conn.cursor() as cur:
             await cur.executemany(query, data)
+
+
+    async def delete_user(self, discord_user_id):
+        query = """
+            DELETE FROM users WHERE discord_user_id=%s;
+        """
+        async with self.conn.cursor() as cur:
+            await cur.execute(query, (discord_user_id,))
+
+    async def delete_not_updated(self, dt_pivot):
+        """Deletes all enties from users and roles which are not recently updated."""
+        query = """
+            DELETE FROM users, roles
+            WHERE updated_at < %s;
+        """
+        async with self.conn.cursor() as cur:
+            return await cur.execute(query, (dt_pivot,))
+
+    async def insert_administrator(self, role_id: int) -> None:
+        """Inserts a administrator role with role id into the database."""
+
+        query = """
+            INSERT INTO administrators (role)
+            VALUES (%s)
+        """
+        async with self.conn.cursor() as cur:
+            await cur.execute(query, (role_id,))
 
     async def get_all_administrators(self):
         query = """

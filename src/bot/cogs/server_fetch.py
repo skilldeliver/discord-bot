@@ -18,41 +18,21 @@ class ServerFetch(commands.Cog):
         self.guild = self.bot.get_guild(PODKREPI_BG_GUILD_ID)
         self.db_fetcher.start()
 
+    @commands.command(aliases=['q'])
+    async def query(self, ctx, *, arg):
+        o = await self.bot.db.query(arg)
+        await ctx.send(o)
+
     @tasks.loop(count=1)
     async def db_fetcher(self):
-        """Fetches Discord information into the DB."""
+        """Fetches Discord information into the DB after Cog loading."""
         
         assert self.guild is not None, "Server fetching failed, can't find the guild."
  
+        dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
         s = time()
-        # Fetching roles into the db after bot start
-        roles_data = []
-        for role in sorted(await self.guild.fetch_roles()):
-                args = self.__role_to_dict(role)
-                roles_data.append(args)
-
-        await self.bot.db.update_roles(roles_data)
-
-        # Fetching users into the db after bot start
-        users_data = []
-        users_roles = []
-        async for member in self.guild.fetch_members(limit=None):
-            if not member.bot:
-                args = self.__user_to_dict(member)
-                users_data.append(args)
-
-                for role in member.roles:
-                    args = {
-                        'user_id': member.id,
-                        'role_id': role.id,
-                        'updated_at': dt.now(),
-                        'created_at': dt.now()
-                    }
-                    users_roles.append(args)
-
-        # TODO deleting users that left the server
-        await self.bot.db.update_users(users_data)
-        await self.bot.db.update_role_user(users_roles)
+        await self.fetch_roles()
+        await self.fetch_users()
         e = time()
         print('Done!', e-s)
 
@@ -63,9 +43,37 @@ class ServerFetch(commands.Cog):
     async def db_fetcher_wait(self):
         await self.bot.wait_until_ready()
 
+    async def fetch_roles(self):
+        # Fetching roles into the db after bot start
+        roles_data = []
+        for role in sorted(await self.guild.fetch_roles()):
+                args = self.__role_to_dict(role)
+                roles_data.append(args)
+
+        await self.bot.db.update_roles(roles_data)
+
+    async def fetch_users(self):
+        # Fetching users into the db after bot start
+        users_data = []
+        users_roles = []
+        async for member in self.guild.fetch_members(limit=None):
+            if not member.bot:
+                args = self.__user_to_dict(member)
+                users_data.append(args)
+
+                # args for user roles is a list
+                args = self.__user_roles_to_dict(member)
+                users_roles += args
+
+        # TODO deleting users that left the server
+        # TODO deleting roles that are not valid anymore
+        await self.bot.db.update_users(users_data)
+        await self.bot.db.update_role_user(users_roles)
+
+    # TODO add guild check
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if not member.bot:
+        if not member.bot: 
             await self.__update_member(member)
 
     @commands.Cog.listener()
@@ -114,6 +122,19 @@ class ServerFetch(commands.Cog):
                     updated_at=dt.now(),
                     created_at=dt.now()
                     )
+
+    def __user_roles_to_dict(self, member) -> dict:
+        user_roles = []
+
+        for role in member.roles:
+            args = {
+                'user_id': member.id,
+                'role_id': role.id,
+                'updated_at': dt.now(),
+                'created_at': dt.now()
+            }
+            user_roles.append(args)
+        return user_roles
 
 
 def setup(bot):
