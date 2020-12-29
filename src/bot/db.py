@@ -192,12 +192,13 @@ class BotDataBase:
 
     async def delete_not_updated(self, dt_pivot):
         """Deletes all enties from users and roles which are not recently updated."""
+        #TODO continue from here (roles deleting does not work properly)
         query = """
-            DELETE FROM users, roles
-            WHERE updated_at < %s;
+            DELETE FROM roles WHERE updated_at < %(dt_pivot)s;
+            DELETE FROM users WHERE updated_at < %(dt_pivot)s;
         """
         async with self.conn.cursor() as cur:
-            return await cur.execute(query, (dt_pivot,))
+            return await cur.execute(query, {'dt_pivot': dt_pivot,})
 
     async def insert_administrator(self, role_id: int) -> None:
         """Inserts a administrator role with role id into the database."""

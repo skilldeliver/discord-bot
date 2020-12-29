@@ -26,13 +26,14 @@ class ServerFetch(commands.Cog):
     @tasks.loop(count=1)
     async def db_fetcher(self):
         """Fetches Discord information into the DB after Cog loading."""
-        
+
         assert self.guild is not None, "Server fetching failed, can't find the guild."
  
         dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
         s = time()
         await self.fetch_roles()
         await self.fetch_users()
+        # print('Deleted', (await self.bot.db.delete_not_updated(dt_pivot)), 'items')
         e = time()
         print('Done!', e-s)
 
@@ -47,8 +48,9 @@ class ServerFetch(commands.Cog):
         # Fetching roles into the db after bot start
         roles_data = []
         for role in sorted(await self.guild.fetch_roles()):
-                args = self.__role_to_dict(role)
-                roles_data.append(args)
+            print(role.name)
+            args = self.__role_to_dict(role)
+            roles_data.append(args)
 
         await self.bot.db.update_roles(roles_data)
 
