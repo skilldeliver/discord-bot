@@ -197,6 +197,7 @@ class BotDataBase:
             DELETE FROM roles WHERE updated_at < %(dt_pivot)s;
             DELETE FROM users WHERE updated_at < %(dt_pivot)s;
         """
+        #  
         async with self.conn.cursor() as cur:
             return await cur.execute(query, {'dt_pivot': dt_pivot,})
 

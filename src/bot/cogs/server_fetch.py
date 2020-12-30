@@ -33,7 +33,7 @@ class ServerFetch(commands.Cog):
         s = time()
         await self.fetch_roles()
         await self.fetch_users()
-        # print('Deleted', (await self.bot.db.delete_not_updated(dt_pivot)), 'items')
+        await self.bot.db.delete_not_updated(dt_pivot)
         e = time()
         print('Done!', e-s)
 
@@ -48,7 +48,6 @@ class ServerFetch(commands.Cog):
         # Fetching roles into the db after bot start
         roles_data = []
         for role in sorted(await self.guild.fetch_roles()):
-            print(role.name)
             args = self.__role_to_dict(role)
             roles_data.append(args)
 
