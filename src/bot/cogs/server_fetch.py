@@ -31,11 +31,15 @@ class ServerFetch(commands.Cog):
  
         dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
         s = time()
+
+        members = await self.guild.fetch_members(limit=None).flatten()
+
         await self.fetch_roles()
-        await self.fetch_users()
+        await self.fetch_users(users=members)
         await self.bot.db.delete_not_updated(dt_pivot)
         e = time()
         print('Done!', e-s)
+        # TODO: remove time monitoring from above
 
     def cog_unload(self):
         self.db_fetcher.cancel()
@@ -53,11 +57,11 @@ class ServerFetch(commands.Cog):
 
         await self.bot.db.update_roles(roles_data)
 
-    async def fetch_users(self):
+    async def fetch_users(self, users):
         # Fetching users into the db after bot start
         users_data = []
         users_roles = []
-        async for member in self.guild.fetch_members(limit=None):
+        for member in users:
             if not member.bot:
                 args = self.__user_to_dict(member)
                 users_data.append(args)
@@ -66,26 +70,24 @@ class ServerFetch(commands.Cog):
                 args = self.__user_roles_to_dict(member)
                 users_roles += args
 
-        # TODO deleting users that left the server
-        # TODO deleting roles that are not valid anymore
         await self.bot.db.update_users(users_data)
         await self.bot.db.update_role_user(users_roles)
 
     # TODO add guild check
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if not member.bot: 
-            await self.__update_member(member)
+        if not member.bot:
+            await self.fetch_users(users=[member,])
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if not member.bot:
             await self.bot.db.delete_user(member.id)
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        if not after.bot:
-            await self.__update_member(after)
+    # @commands.Cog.listener()
+    # async def on_member_update(self, before, after):
+    #     if not after.bot:
+    #         await self.fetch_users(users=[after,])
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
