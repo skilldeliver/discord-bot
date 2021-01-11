@@ -9,7 +9,7 @@ class BotClient(commands.Bot):
         super().__init__(*args, **kwargs)
 
     async def on_ready(self):
-        self.db = await BotDataBase()
+        self.db = await BotDataBase(loop=self.loop)
         print("Loaded the db!")
 
         for ext in extensions:

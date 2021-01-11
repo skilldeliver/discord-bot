@@ -26,13 +26,14 @@ class BotDataBase:
     Represents a interface to the MySQL database.
     """
 
-    async def __init__(self):
-        self.conn = await aiomysql.connect(
+    async def __init__(self, loop):
+        self.pool = await aiomysql.create_pool(
             user=environ["DB_USER"],
             password=environ["DB_PASS"].strip("'"),
             db=environ["DB_NAME"],
             port=int(environ["DB_PORT"]),
-            host="localhost",
+            host=environ["DB_HOST"],
+            loop=loop,
             autocommit=True,
         )
         await self._create_tables()
@@ -63,8 +64,9 @@ class BotDataBase:
             PRIMARY KEY (`discord_user_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query)
 
     async def __create_role_table(self):
         query = """
@@ -78,8 +80,9 @@ class BotDataBase:
             PRIMARY KEY (`discord_role_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query)
 
     async def __create_role_users_table(self):
         query = """
@@ -98,8 +101,9 @@ class BotDataBase:
                 ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query)
 
     async def __create_bot_administrators_table(self):
         # TODO
@@ -144,8 +148,9 @@ class BotDataBase:
                 discord_avatar_hash=VALUES(discord_avatar_hash),
                 updated_at=VALUES(updated_at)
         """
-        async with self.conn.cursor() as cur:
-            await cur.executemany(query, data)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.executemany(query, data)
 
     async def update_roles(
         self,
@@ -165,8 +170,9 @@ class BotDataBase:
                 updated_at=VALUES(updated_at)
             """
 
-        async with self.conn.cursor() as cur:
-            await cur.executemany(query, data)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.executemany(query, data)
 
     async def update_role_user(self, data):
         # TODO Write docstring of the form of data
@@ -179,16 +185,18 @@ class BotDataBase:
                 updated_at=VALUES(updated_at)
         """
 
-        async with self.conn.cursor() as cur:
-            await cur.executemany(query, data)
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.executemany(query, data)
 
 
     async def delete_user(self, discord_user_id):
         query = """
             DELETE FROM users WHERE discord_user_id=%s;
         """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query, (discord_user_id,))
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, (discord_user_id,))
 
     async def delete_not_updated(self, dt_pivot):
         """Deletes all enties from users and roles which are not recently updated."""
@@ -198,8 +206,18 @@ class BotDataBase:
             DELETE FROM users WHERE updated_at < %(dt_pivot)s;
         """
         #  
-        async with self.conn.cursor() as cur:
-            return await cur.execute(query, {'dt_pivot': dt_pivot,})
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                return await cur.execute(query, {'dt_pivot': dt_pivot,})
+
+    async def delete_not_updated_role_user(self, dt_pivot):
+        """Deletes all enties from role user which are not recently updated."""
+        query = """
+            DELETE FROM role_user WHERE updated_at < %(dt_pivot)s;
+        """
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                return await cur.execute(query, {'dt_pivot': dt_pivot,})
 
     async def insert_administrator(self, role_id: int) -> None:
         """Inserts a administrator role with role id into the database."""
@@ -208,17 +226,18 @@ class BotDataBase:
             INSERT INTO administrators (role)
             VALUES (%s)
         """
-        async with self.conn.cursor() as cur:
-            await cur.execute(query, (role_id,))
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, (role_id,))
 
     async def get_all_administrators(self):
         query = """
             SELECT role FROM administrators
         """
-        async with self.conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute(query)
-            return await cur.fetchall()
-
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query)
+                return await cur.fetchall()
 
 if __name__ == "__main__":
 

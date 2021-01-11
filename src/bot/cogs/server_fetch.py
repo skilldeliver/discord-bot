@@ -50,12 +50,9 @@ class ServerFetch(commands.Cog):
 
     async def fetch_roles(self):
         # Fetching roles into the db after bot start
-        roles_data = []
         for role in sorted(await self.guild.fetch_roles()):
             args = self.__role_to_dict(role)
-            roles_data.append(args)
-
-        await self.bot.db.update_roles(roles_data)
+            await self.bot.db.update_roles([args])
 
     async def fetch_users(self, users):
         # Fetching users into the db after bot start
@@ -70,9 +67,13 @@ class ServerFetch(commands.Cog):
                 args = self.__user_roles_to_dict(member)
                 users_roles += args
 
-        await self.bot.db.update_users(users_data)
-        await self.bot.db.update_role_user(users_roles)
+        dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
 
+        await self.bot.db.update_users(users_data)
+        # TODO: remove not updated roles
+        # TODO: https://github.com/aio-libs/aiomysql/blob/master/examples/example_pool.py
+        await self.bot.db.update_role_user(users_roles)
+        await self.bot.db.delete_not_updated_role_user(dt_pivot)
     # TODO add guild check
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -84,18 +85,17 @@ class ServerFetch(commands.Cog):
         if not member.bot:
             await self.bot.db.delete_user(member.id)
 
-    # @commands.Cog.listener()
-    # async def on_member_update(self, before, after):
-    #     if not after.bot:
-    #         await self.fetch_users(users=[after,])
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        if not after.bot:
+            await self.fetch_users(users=[after,])
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
         if not after.bot:
             member = self.guild.get_member(after.id)
             assert member is not None, 'Failed fetching user update'
-
-            await self.__update_member(member)
+            await self.fetch_users(users=[member])
 
     # on_member_join
     # on_member_remove
