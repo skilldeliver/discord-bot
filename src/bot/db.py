@@ -3,39 +3,26 @@ import aiomysql
 from os import environ
 
 
-def asyncinit(cls):
-    """Decorator for an async instantiation of a class."""
-    __new__ = cls.__new__
 
-    async def init(obj, *arg, **kwarg):
-        await obj.__init__(*arg, **kwarg)
-        return obj
-
-    def new(cls, *arg, **kwarg):
-        obj = __new__(cls, *arg, **kwarg)
-        coro = init(obj, *arg, **kwarg)
-        return coro
-
-    cls.__new__ = new
-    return cls
-
-
-@asyncinit
 class BotDataBase:
     """
     Represents a interface to the MySQL database.
     """
 
-    async def __init__(self, loop):
+    def __init__(self, loop):
+        self.loop = loop
+    
+
+    async def connect(self):
         self.pool = await aiomysql.create_pool(
             user=environ["DB_USER"],
             password=environ["DB_PASS"].strip("'"),
             db=environ["DB_NAME"],
             port=int(environ["DB_PORT"]),
             host=environ["DB_HOST"],
-            loop=loop,
+            loop=self.loop,
             autocommit=True,
-        )
+            )
         await self._create_tables()
 
     #TODO: remove this function for debuging purposes
@@ -184,10 +171,11 @@ class BotDataBase:
             ON DUPLICATE KEY UPDATE
                 updated_at=VALUES(updated_at)
         """
-
+        
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.executemany(query, data)
+        print('update_role_user finished')
 
 
     async def delete_user(self, discord_user_id):
@@ -210,14 +198,24 @@ class BotDataBase:
             async with conn.cursor() as cur:
                 return await cur.execute(query, {'dt_pivot': dt_pivot,})
 
-    async def delete_not_updated_role_user(self, dt_pivot):
+    async def delete_not_updated_role_user(self, dt_pivot, user_id=None):
         """Deletes all enties from role user which are not recently updated."""
-        query = """
-            DELETE FROM role_user WHERE updated_at < %(dt_pivot)s;
-        """
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                return await cur.execute(query, {'dt_pivot': dt_pivot,})
+        if user_id is not None:
+            query = """
+                DELETE FROM role_user
+                WHERE updated_at < %(dt_pivot)s AND user_id = %(user_id)s;
+            """
+            print('DT Pivot: ', dt_pivot)
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    return await cur.execute(query, {'dt_pivot': dt_pivot, 'user_id': user_id})
+        else:
+            query = """
+                DELETE FROM role_user WHERE updated_at <  %(dt_pivot)s;
+            """
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    return await cur.execute(query, {'dt_pivot': dt_pivot})
 
     async def insert_administrator(self, role_id: int) -> None:
         """Inserts a administrator role with role id into the database."""

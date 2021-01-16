@@ -3,13 +3,13 @@ from bot.db import BotDataBase
 
 extensions = ("bot.cogs.gsuite", "bot.cogs.server_fetch")
 
-
 class BotClient(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def on_ready(self):
-        self.db = await BotDataBase(loop=self.loop)
+        self.db = BotDataBase(self.loop)
+        await self.db.connect()
         print("Loaded the db!")
 
         for ext in extensions:
