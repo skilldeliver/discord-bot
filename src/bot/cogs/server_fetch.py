@@ -12,7 +12,7 @@ from time import time
 
 from bot.constants import Color, GSuiteData, PODKREPI_BG_GUILD_ID
 
-
+#TODO cleanup print debugs
 class ServerFetch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -92,20 +92,18 @@ class ServerFetch(commands.Cog):
     # TODO add guild check
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if not member.bot:
-            await self.fetch_user(user=member)
-            await self.bot.db.update_role_user(users_roles)
+        await self.fetch_user(user=user)
 
     # TODO add guild check
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if not member.bot:
             await self.bot.db.delete_user(member.id)
+
     # TODO add guild check
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        if not after.bot:
-            await self.fetch_user(user=after)
+        await self.fetch_user(user=after)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
