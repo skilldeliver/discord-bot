@@ -30,7 +30,7 @@ class ServerFetch(commands.Cog):
 
         assert self.guild is not None, "Server fetching failed, can't find the guild."
  
-        dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
+        dt_pivot = self.dt_now() # a pivot to compare which dt timestamp fields are not deleted
         s = time()
 
         members = await self.guild.fetch_members(limit=None).flatten()
@@ -60,7 +60,7 @@ class ServerFetch(commands.Cog):
         # Fetching users into the db after bot start
         users_data = []
         users_roles = []
-        dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
+        dt_pivot = self.dt_now() # a pivot to compare which dt timestamp fields are not deleted
 
         for member in users:
             if not member.bot:
@@ -74,11 +74,12 @@ class ServerFetch(commands.Cog):
         await self.bot.db.update_users(users_data)
         # TODO: remove not updated roles
         # TODO: https://github.com/aio-libs/aiomysql/blob/master/examples/example_pool.py
+        print("dt pivot: ", dt_pivot)
         await self.bot.db.update_role_user(users_roles)
         print('That:', (await self.bot.db.delete_not_updated_role_user(dt_pivot)))
 
     async def fetch_user(self, user):
-        dt_pivot = dt.now() # a pivot to compare which dt timestamp fields are not deleted
+        dt_pivot = self.dt_now() # a pivot to compare which dt timestamp fields are not deleted
 
         if not user.bot:
             user_data = self.__user_to_dict(user)
@@ -126,9 +127,9 @@ class ServerFetch(commands.Cog):
          return  dict(
                     discord_role_id=role.id,
                     name=role.name,
-                    color=role.color.value, 
+                    color=role.color.value,
                     has_pannel_access=role.permissions.administrator,
-                    updated_at=dt.now(),
+                    updated_at=self.dt_now(),
                     created_at=role.created_at
                     )
     
@@ -138,8 +139,8 @@ class ServerFetch(commands.Cog):
                     discord_username=str(member),
                     server_nickname=member.display_name,
                     discord_avatar_hash=hash(member.avatar_url),
-                    updated_at=dt.now(),
-                    created_at=dt.now()
+                    updated_at=self.dt_now(),
+                    created_at=self.dt_now()
                     )
 
     def __user_roles_to_dict(self, member) -> dict:
@@ -149,12 +150,19 @@ class ServerFetch(commands.Cog):
             args = {
                 'user_id': member.id,
                 'role_id': role.id,
-                'updated_at': dt.now(),
-                'created_at': dt.now()
+                'updated_at': self.dt_now(),
+                'created_at': self.dt_now()  
             }
             user_roles.append(args)
         return user_roles
 
+    def dt_now(self):
+        """
+        MySQL permits fractional seconds for TIME , DATETIME , and TIMESTAMP values, with up to microseconds (6 digits) precision. 
+        """
+        now = dt.now()
+        now = now.replace(microsecond=0)
+        return now
 
 def setup(bot):
     bot.add_cog(ServerFetch(bot))

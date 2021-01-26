@@ -121,7 +121,7 @@ class BotDataBase:
             ...
             ]
         """
-
+        # 522113620247576601
         query = """
             INSERT INTO users (discord_user_id, discord_username,
                               server_nickname, discord_avatar_hash,
@@ -171,7 +171,7 @@ class BotDataBase:
             ON DUPLICATE KEY UPDATE
                 updated_at=VALUES(updated_at)
         """
-        
+        print('update_role_user ', data[:5])
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.executemany(query, data)
@@ -189,11 +189,12 @@ class BotDataBase:
     async def delete_not_updated(self, dt_pivot):
         """Deletes all enties from users and roles which are not recently updated."""
         #TODO continue from here (roles deleting does not work properly)
+        #TODO time to leave MySQL
+
         query = """
             DELETE FROM roles WHERE updated_at < %(dt_pivot)s;
             DELETE FROM users WHERE updated_at < %(dt_pivot)s;
         """
-        #  
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 return await cur.execute(query, {'dt_pivot': dt_pivot,})
@@ -211,7 +212,7 @@ class BotDataBase:
                     return await cur.execute(query, {'dt_pivot': dt_pivot, 'user_id': user_id})
         else:
             query = """
-                DELETE FROM role_user WHERE updated_at <  %(dt_pivot)s;
+                DELETE FROM role_user WHERE updated_at < %(dt_pivot)s;
             """
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cur:
