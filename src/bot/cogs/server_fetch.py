@@ -12,7 +12,7 @@ from time import time
 
 from bot.constants import Color, GSuiteData, PODKREPI_BG_GUILD_ID
 
-#TODO cleanup print debugs  
+
 class ServerFetch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -31,16 +31,12 @@ class ServerFetch(commands.Cog):
         assert self.guild is not None, "Server fetching failed, can't find the guild."
  
         dt_pivot = self.dt_now() # a pivot to compare which dt timestamp fields are not deleted
-        s = time()
 
         members = await self.guild.fetch_members(limit=None).flatten()
 
         await self.fetch_roles()
         await self.fetch_users(users=members)
         await self.bot.db.delete_not_updated(dt_pivot)
-        e = time()
-        print('Done!', e-s)
-        # TODO: remove time monitoring from above
 
     def cog_unload(self):
         self.db_fetcher.cancel()
@@ -80,7 +76,7 @@ class ServerFetch(commands.Cog):
         # TODO: https://github.com/aio-libs/aiomysql/blob/master/examples/example_pool.py
 
         await self.bot.db.update_role_user(users_roles)
-        await self.bot.db.delete_not_updated_role_user(dt_pivot))
+        await self.bot.db.delete_not_updated_role_user(dt_pivot)
 
     async def fetch_user(self, user):
         dt_pivot = self.dt_now() # a pivot to compare which dt timestamp fields are not deleted
@@ -92,7 +88,6 @@ class ServerFetch(commands.Cog):
             await self.bot.db.update_users([user_data])
             await self.bot.db.update_role_user(user_roles)
             await self.bot.db.delete_not_updated_role_user(dt_pivot, user_id=user.id)
-            
 
     # TODO add guild check
     @commands.Cog.listener()

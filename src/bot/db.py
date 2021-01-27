@@ -171,11 +171,9 @@ class BotDataBase:
             ON DUPLICATE KEY UPDATE
                 updated_at=VALUES(updated_at)
         """
-        print('update_role_user ', data[:5])
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.executemany(query, data)
-        print('update_role_user finished')
 
 
     async def delete_user(self, discord_user_id):
@@ -214,7 +212,6 @@ class BotDataBase:
                 DELETE FROM role_user
                 WHERE updated_at < %(dt_pivot)s AND user_id = %(user_id)s;
             """
-            print('DT Pivot: ', dt_pivot)
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cur:
                     return await cur.execute(query, {'dt_pivot': dt_pivot, 'user_id': user_id})
