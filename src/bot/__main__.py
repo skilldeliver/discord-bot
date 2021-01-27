@@ -16,6 +16,7 @@ async def main():
     # create an intents object
     intents = discord.Intents.default()
     intents.members = True
+    intents.guilds = True
 
     # create a Client object
     bot = BotClient(command_prefix=PREFIX, intents=intents)

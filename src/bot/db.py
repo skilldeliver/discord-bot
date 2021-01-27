@@ -186,6 +186,14 @@ class BotDataBase:
             async with conn.cursor() as cur:
                 await cur.execute(query, (discord_user_id,))
 
+    async def delete_role(self, discord_role_id):
+        query = """
+            DELETE FROM roles WHERE discord_role_id=%s;
+        """
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, (discord_role_id,))
+
     async def delete_not_updated(self, dt_pivot):
         """Deletes all enties from users and roles which are not recently updated."""
         #TODO continue from here (roles deleting does not work properly)

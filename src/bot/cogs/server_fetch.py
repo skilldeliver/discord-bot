@@ -12,7 +12,7 @@ from time import time
 
 from bot.constants import Color, GSuiteData, PODKREPI_BG_GUILD_ID
 
-#TODO cleanup print debugs
+#TODO cleanup print debugs  
 class ServerFetch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -55,6 +55,10 @@ class ServerFetch(commands.Cog):
             args = self.__role_to_dict(role)
             await self.bot.db.update_roles([args])
 
+    async def fetch_role(self, role):
+        args = self.__role_to_dict(role)
+        await self.bot.db.update_roles([args])
+
     # used in the initial fetcher from above
     async def fetch_users(self, users):
         # Fetching users into the db after bot start
@@ -74,9 +78,9 @@ class ServerFetch(commands.Cog):
         await self.bot.db.update_users(users_data)
         # TODO: remove not updated roles
         # TODO: https://github.com/aio-libs/aiomysql/blob/master/examples/example_pool.py
-        print("dt pivot: ", dt_pivot)
+
         await self.bot.db.update_role_user(users_roles)
-        print('That:', (await self.bot.db.delete_not_updated_role_user(dt_pivot)))
+        await self.bot.db.delete_not_updated_role_user(dt_pivot))
 
     async def fetch_user(self, user):
         dt_pivot = self.dt_now() # a pivot to compare which dt timestamp fields are not deleted
@@ -88,6 +92,7 @@ class ServerFetch(commands.Cog):
             await self.bot.db.update_users([user_data])
             await self.bot.db.update_role_user(user_roles)
             await self.bot.db.delete_not_updated_role_user(dt_pivot, user_id=user.id)
+            
 
     # TODO add guild check
     @commands.Cog.listener()
@@ -111,6 +116,18 @@ class ServerFetch(commands.Cog):
             member = self.guild.get_member(after.id)
             assert member is not None, 'Failed fetching user update'
             await self.fetch_user(user=member)
+
+    @commands.Cog.listener()
+    async def on_guild_role_create(self, role):
+        await self.fetch_role(role=role)
+
+    @commands.Cog.listener()
+    async def on_guild_role_delete(self, role):
+        await self.bot.db.delete_role(role.id)
+
+    @commands.Cog.listener()
+    async def on_guild_role_update(self, before, after):
+        await self.fetch_role(role=after)
 
     # on_member_join
     # on_member_remove
