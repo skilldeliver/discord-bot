@@ -9,7 +9,17 @@ A Discord bot allowing (hopefully) easy 2-way sync of events between Discord and
 6. Drink water
 
 # How to run with Docker:
-docker run -e BOT_TOKEN=[token] [container_image_name]
+
+1. Create an .env file with the following enviorment variables
+```
+BOT_TOKEN=
+DB_NAME=
+DB_USER=
+DB_PASS=
+DB_ROOT_PASS=
+```
+2. `docker-compose --env-file .env build`
+3. `docker-compose --env-file .env up -d`
 
 # TODOs
 - [ ] Rename of this repo to `discord-bot` because the bot can have many submodules?
