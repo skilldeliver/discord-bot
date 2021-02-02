@@ -12,6 +12,10 @@ from time import time
 
 from bot.constants import Color, GSuiteData, PODKREPI_BG_GUILD_ID
 
+def is_podkrepi_guild():
+    def predicate(member, *args):
+        return member.guild.id == PODKREPI_BG_GUILD_ID
+    return commands.check(predicate)
 
 class ServerFetch(commands.Cog):
     def __init__(self, bot):
@@ -90,7 +94,10 @@ class ServerFetch(commands.Cog):
             await self.bot.db.delete_not_updated_role_user(dt_pivot, user_id=user.id)
 
     # TODO add guild check
+    return commands.check(predicate)
+
     @commands.Cog.listener()
+    @is_podkrepi_guild()
     async def on_member_join(self, member):
         await self.fetch_user(user=user)
 

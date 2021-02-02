@@ -1,5 +1,7 @@
 from discord.ext import commands
 from bot.db import BotDataBase
+import aiomysql
+import asyncio
 
 extensions = ("bot.cogs.gsuite", "bot.cogs.server_fetch")
 
@@ -9,8 +11,15 @@ class BotClient(commands.Bot):
 
     async def on_ready(self):
         self.db = BotDataBase(self.loop)
-        await self.db.connect()
-        print("Loaded the db!")
+        print("Connecting to the db!")
+        while True:
+            try:
+                await self.db.connect()
+                break
+            except Exception as e:
+                print(e)
+                print("Retrying connecting to db...")
+                await asyncio.sleep(3)
 
         for ext in extensions:
             try:

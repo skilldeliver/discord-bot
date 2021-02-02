@@ -1,0 +1,28 @@
+version: "3.7"
+   
+services:
+  mysql_db_container:
+    image: mysql:latest
+    volumes:
+      - db_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      - '3306:3306'
+  bot:
+    build: .
+    depends_on:
+      - mysql_db_container
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - DB_NAME=${DB_NAME}
+      - DB_PASS=${DB_PASS}
+      - DB_USER=${DB_USER}
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=UTF-8
+volumes:
+    db_data: {}

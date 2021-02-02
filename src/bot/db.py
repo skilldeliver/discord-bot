@@ -16,10 +16,10 @@ class BotDataBase:
     async def connect(self):
         self.pool = await aiomysql.create_pool(
             user=environ["DB_USER"],
-            password=environ["DB_PASS"].strip("'"),
+            password=environ["DB_PASS"],
             db=environ["DB_NAME"],
-            port=int(environ["DB_PORT"]),
-            host=environ["DB_HOST"],
+            host="mysql_db_container",
+            port=3306,
             loop=self.loop,
             autocommit=True,
             )
