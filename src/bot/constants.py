@@ -4,7 +4,6 @@ from datetime import timedelta
 PREFIX = "%"
 PODKREPI_BG_GUILD_ID = 778984868146577458
 
-
 @dataclass
 class Color:
     green = int("0x34A853", base=16)

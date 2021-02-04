@@ -20,7 +20,7 @@ DB_ROOT_PASS=
 ```
 2. `docker-compose --env-file .env build`
 3. `docker-compose --env-file .env up -d`
-
+    
 # TODOs
 - [ ] Rename of this repo to `discord-bot` because the bot can have many submodules?
 - [ ] ora.pm submodule - connect with Vasil Enchev about this issue

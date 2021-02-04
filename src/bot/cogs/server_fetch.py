@@ -28,6 +28,11 @@ class ServerFetch(commands.Cog):
         o = await self.bot.db.query(arg)
         await ctx.send(o)
 
+    @commands.command(aliases=['c'])
+    async def conndb(self, ctx, *, arg):
+        print("Connecting to the db!")
+        await self.bot.db.connect() 
+
     @tasks.loop(count=1)
     async def db_fetcher(self):
         """Fetches Discord information into the DB after Cog loading."""
@@ -92,9 +97,6 @@ class ServerFetch(commands.Cog):
             await self.bot.db.update_users([user_data])
             await self.bot.db.update_role_user(user_roles)
             await self.bot.db.delete_not_updated_role_user(dt_pivot, user_id=user.id)
-
-    # TODO add guild check
-    return commands.check(predicate)
 
     @commands.Cog.listener()
     @is_podkrepi_guild()

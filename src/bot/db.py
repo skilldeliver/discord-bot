@@ -11,7 +11,6 @@ class BotDataBase:
 
     def __init__(self, loop):
         self.loop = loop
-    
 
     async def connect(self):
         self.pool = await aiomysql.create_pool(
@@ -23,6 +22,7 @@ class BotDataBase:
             loop=self.loop,
             autocommit=True,
             )
+            # (host='mysql_db_container', user=environ["DB_USER"], password=environ["DB_PASS"], db=environ["DB_NAME"]
         await self._create_tables()
 
     #TODO: remove this function for debuging purposes
@@ -38,6 +38,7 @@ class BotDataBase:
         await self.__create_bot_administrators_table()
 
     async def __create_user_table(self):
+        # TODO change discord user id to string cuz int overflow
         query = """
              CREATE TABLE IF NOT EXISTS `users`(
             `discord_user_id` bigint unsigned NOT NULL,

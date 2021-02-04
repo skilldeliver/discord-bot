@@ -17,6 +17,8 @@ services:
     build: .
     depends_on:
       - mysql_db_container
+    links:
+      - mysql_db_container
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - DB_NAME=${DB_NAME}
